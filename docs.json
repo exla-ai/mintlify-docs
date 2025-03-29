@@ -60,6 +60,17 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Mobile",
+        "groups": [
+          {
+            "group": "SDK",
+            "pages": [
+              "mobile/android"
+            ]
+          }
+        ]
       }
     ]
   },

@@ -1,76 +1,164 @@
 ---
 title: "Android SDK"
-description: "Run AI models locally on Android devices"
+description: "Run Llama 3.2 3B locally on your Android device"
 ---
 
-# Running AI Models Locally on Android
+# Exla AI SDK for Android
 
-This guide explains how to run AI models locally on your Android device using the Exla SDK.
+The Exla Android SDK allows you to run state-of-the-art AI text generation directly on your Android device, without requiring an internet connection for inference.
 
-## Supported Models
+## Features
 
-- **Whisper** (speech-to-text)
-- **LLaMA** (chatbot)
+- 🚀 **Fully On-Device**: All processing happens on your device, ensuring privacy and offline usage
+- 📱 **Optimized for Mobile**: Uses quantized models specifically designed for mobile devices
+- ⚡ **Fast Responses**: Efficient implementation for quick text generation
+- 🧠 **Llama 3.2 3B**: Powered by Meta's latest Llama 3.2 3B Instruct model
 
 ## Installation
 
-To use this library, add it to your Android project:
+Add JitPack repository to your project's `settings.gradle.kts`:
 
-```gradle
-dependencies {
-    implementation 'com.exla:ai-models:1.0.0'
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
 }
 ```
 
-Make sure to include JNI support if needed.
-
-## 1. Running Whisper (Speech-to-Text)
-
-Convert speech to text locally without an internet connection.
-
-
-### Model Setup
-
-## 1. Whisper
+Then add the Exla AI SDK dependency to your app's `build.gradle.kts`:
 
 ```kotlin
-import com.exla.models.Whisper
-
-val whisper = Whisper(modelPath = "tiny.en")
-
-val result = whisper.transcribe(audioPath = "recording.wav")
-println(result)  // Outputs: "Hello, how are you?"
+dependencies {
+    implementation("com.github.exla-ai:exla-android-sdk:v1.0.0-alpha01")
+}
 ```
 
+## Using the SDK
 
-
-## 2. Running LLaMA (Chatbot)
-
-Interact with a lightweight LLaMA-based chatbot.
-
-### API Usage
+### 1. Initialize the SDK
 
 ```kotlin
-import com.exla.models.LlamaChat
+// Get the SDK instance
+val sdk = ExlaAiSdk.getInstance(context)
 
-val chat = LlamaChat(modelPath = "llama-3.2_3B")
-
-val response = chat.generate("What is AI?")
-println(response)
+// Initialize and download the model (first run only)
+sdk.initialize(
+    progressCallback = { progress -> 
+        // Update UI with download progress (0-100)
+        progressBar.progress = progress
+    },
+    completionCallback = { success ->
+        if (success) {
+            // Model loaded successfully
+            statusText.text = "Model ready!"
+        } else {
+            // Model download or initialization failed
+            statusText.text = "Model initialization failed"
+        }
+    }
+)
 ```
 
-## Running the Models
+### 2. Generate Text
 
-After setting up the models, run your app and call:
+Once the model is loaded, you can generate text responses:
 
 ```kotlin
-val response = chat.generate("Explain neural networks.")
-println(response)
+// Check if the model is ready
+if (sdk.isReady()) {
+    // Ask a question
+    sdk.askAI("What is machine learning?") { response ->
+        // Update UI with the response
+        outputText.text = response
+    }
+}
 ```
 
-OR for speech-to-text:
+### 3. Model Details
+
+The SDK automatically downloads and uses Llama 3.2 3B Instruct (Q2_K.gguf) - a 2-bit quantized version of the Llama 3.2 3B model optimized for mobile devices.
+
+- **Model Size**: ~1.3GB download
+- **Capabilities**: Text completion, question answering, simple reasoning
+- **Languages**: Primarily English, with limited support for other languages
+- **Context Window**: 2048 tokens
+
+## Example App
+
+Here's a complete example of a simple chat interface:
 
 ```kotlin
-val text = whisper.transcribe("audio.wav")
-println(text)
+class MainActivity : AppCompatActivity() {
+    private lateinit var sdk: ExlaAiSdk
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        
+        // Get SDK instance
+        sdk = ExlaAiSdk.getInstance(applicationContext)
+        
+        // Set up download button
+        findViewById<Button>(R.id.downloadButton).setOnClickListener {
+            downloadModel()
+        }
+        
+        // Set up chat button
+        findViewById<Button>(R.id.sendButton).setOnClickListener {
+            val prompt = findViewById<EditText>(R.id.promptInput).text.toString()
+            if (prompt.isNotEmpty()) {
+                generateResponse(prompt)
+            }
+        }
+    }
+    
+    private fun downloadModel() {
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val statusText = findViewById<TextView>(R.id.statusText)
+        
+        progressBar.visibility = View.VISIBLE
+        statusText.text = "Downloading model..."
+        
+        sdk.initialize(
+            progressCallback = { progress -> 
+                progressBar.progress = progress
+                statusText.text = "Downloading: $progress%"
+            },
+            completionCallback = { success ->
+                progressBar.visibility = View.GONE
+                statusText.text = if (success) "Model ready!" else "Download failed"
+            }
+        )
+    }
+    
+    private fun generateResponse(prompt: String) {
+        val outputText = findViewById<TextView>(R.id.outputText)
+        
+        if (!sdk.isReady()) {
+            outputText.text = "Please download the model first"
+            return
+        }
+        
+        outputText.text = "Generating response..."
+        
+        sdk.askAI(prompt) { response ->
+            runOnUiThread {
+                outputText.text = response
+            }
+        }
+    }
+}
 ```
+
+## Requirements
+
+- Android 7.0 (API level 24) or higher
+- Approximately 2.5GB of free storage space
+- At least 4GB of RAM recommended
+
+## Privacy
+
+All text generation happens entirely on your device. The SDK only connects to the internet once to download the model file.
