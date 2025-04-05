@@ -1,6 +1,5 @@
 # Exla Documentation
 
-[![URL](https://exla.mintlify.app/)]
 [![Deployment Status](https://img.shields.io/badge/deployment-active-success)](https://exla.ai)
 
 Official documentation for Exla - Hardware-aware AI model optimization platform for edge devices.
