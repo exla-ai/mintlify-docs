@@ -95,28 +95,6 @@ for image_path, answer in results.items():
     print(f"{image_path}: {answer}")
 ```
 
-### Jetson-Specific Optimizations
-
-For Jetson devices, you can explicitly install the NVIDIA PyTorch wheel for optimal performance:
-
-```python
-from exla.models.internvl2_5 import internvl2_5
-
-model = internvl2_5()
-
-# Install NVIDIA PyTorch wheel (only needed once)
-model.install_nvidia_pytorch()
-
-# Run inference with GPU acceleration
-results = model.vqa(...)
-```
-
-## Performance Considerations
-
-### Python Version
-
-For Jetson devices, Python 3.10 is strongly recommended as the NVIDIA PyTorch wheel is specifically built for this version. Using other Python versions will result in CPU-only inference, which is significantly slower.
-
 ## API Reference
 
 ### `internvl2_5()`
@@ -210,7 +188,6 @@ The InternVL2.5 model provides rich visual feedback during execution:
 
 📊 Initial System Resources:
 📊 Resource Monitor - NVIDIA Jetson AGX Orin
-💻 System Memory: 4.5GB / 15.6GB (29%)
 
 ⠏ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
 ✓ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
