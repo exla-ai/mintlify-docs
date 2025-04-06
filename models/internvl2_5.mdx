@@ -1,0 +1,239 @@
+---
+title: 'InternVL2.5'
+description: 'InternVL2.5 multimodal vision-language model optimized for Jetson and other devices'
+---
+
+# InternVL2.5 Model
+
+InternVL2.5 is a powerful multimodal vision-language model that connects visual and textual understanding. It can process both images and text, enabling capabilities like visual question answering, image captioning, and multimodal reasoning.
+
+## Features
+
+- **Hardware-Optimized**: Automatically detects your hardware and uses the appropriate implementation:
+  - **Jetson Devices** (Orin Nano, AGX Orin): GPU-accelerated implementation
+  - **Standard GPUs**: GPU-accelerated implementation with CUDA
+  - **CPU-only Systems**: Optimized CPU implementation
+  
+- **Real-time Progress Indicators**: Visual feedback with rotating spinners and timing information
+  
+- **Resource Monitoring**: Built-in monitoring of system resources (memory usage, GPU utilization)
+  
+- **Multiple Tasks**: Support for visual question answering, image captioning, and multimodal reasoning
+
+## Installation
+
+The InternVL2.5 model is included in the Exla SDK. No separate installation is required.
+
+```bash
+pip install exla-sdk
+```
+
+## Basic Usage
+
+```python
+from exla.models.internvl2_5 import internvl2_5
+import json
+
+# Initialize the model (automatically detects your hardware)
+model = internvl2_5()
+
+# Run visual question answering
+results = model.vqa(
+    image_path="path/to/image.jpg",
+    question="What is shown in this image?"
+)
+
+# Print results
+print(json.dumps(results, indent=2))
+```
+
+## Advanced Usage
+
+### Image Captioning
+
+```python
+# Generate captions for images
+captions = model.caption(
+    image_paths=["path/to/image1.jpg", "path/to/image2.jpg"]
+)
+
+# Print captions
+for image_path, caption in captions.items():
+    print(f"{image_path}: {caption}")
+```
+
+### Multimodal Reasoning
+
+```python
+# Perform multimodal reasoning
+reasoning_result = model.reason(
+    image_path="path/to/image.jpg",
+    prompt="Describe the scene in detail and explain what might happen next."
+)
+
+print(reasoning_result)
+```
+
+### Processing Multiple Images
+
+```python
+# Process a list of images with the same question
+images = [
+    "path/to/image1.jpg",
+    "path/to/image2.jpg",
+    "path/to/image3.jpg"
+]
+
+results = model.vqa(
+    image_paths=images,
+    question="What objects can you see?"
+)
+
+# Print results for each image
+for image_path, answer in results.items():
+    print(f"{image_path}: {answer}")
+```
+
+### Jetson-Specific Optimizations
+
+For Jetson devices, you can explicitly install the NVIDIA PyTorch wheel for optimal performance:
+
+```python
+from exla.models.internvl2_5 import internvl2_5
+
+model = internvl2_5()
+
+# Install NVIDIA PyTorch wheel (only needed once)
+model.install_nvidia_pytorch()
+
+# Run inference with GPU acceleration
+results = model.vqa(...)
+```
+
+## Performance Considerations
+
+### Hardware Comparison
+
+| Hardware | Model Loading | VQA (1 image) | Caption (1 image) | Total Time |
+|----------|---------------|---------------|-------------------|------------|
+| Jetson AGX Orin (GPU) | ~5-7s | ~1.2s | ~0.9s | ~7-9s |
+| Standard GPU | ~4-6s | ~0.8s | ~0.6s | ~5-7s |
+| CPU | ~10-12s | ~3-5s | ~2-4s | ~15-20s |
+
+### Python Version
+
+For Jetson devices, Python 3.10 is strongly recommended as the NVIDIA PyTorch wheel is specifically built for this version. Using other Python versions will result in CPU-only inference, which is significantly slower.
+
+## API Reference
+
+### `internvl2_5()`
+
+Factory function that returns the appropriate InternVL2.5 model based on the detected hardware.
+
+**Returns:**
+- An InternVL2.5 model instance optimized for the detected hardware
+
+### `model.vqa(image_path=None, image_paths=None, question=None, timeout=300, debug=False)`
+
+Runs visual question answering on the provided image(s) with the given question.
+
+**Parameters:**
+- `image_path` (str): Path to a single image
+- `image_paths` (list): List of image paths for batch processing
+- `question` (str): Question to ask about the image(s)
+- `timeout` (int): Maximum time in seconds to wait for inference (default: 300)
+- `debug` (bool): Whether to print detailed debug information (default: False)
+
+**Returns:**
+- Dictionary mapping image paths to answers
+
+### `model.caption(image_path=None, image_paths=None, timeout=300, debug=False)`
+
+Generates captions for the provided image(s).
+
+**Parameters:**
+- `image_path` (str): Path to a single image
+- `image_paths` (list): List of image paths for batch processing
+- `timeout` (int): Maximum time in seconds to wait for inference (default: 300)
+- `debug` (bool): Whether to print detailed debug information (default: False)
+
+**Returns:**
+- Dictionary mapping image paths to captions
+
+### `model.reason(image_path, prompt, timeout=300, debug=False)`
+
+Performs multimodal reasoning on the provided image with the given prompt.
+
+**Parameters:**
+- `image_path` (str): Path to an image
+- `prompt` (str): Reasoning prompt or instruction
+- `timeout` (int): Maximum time in seconds to wait for inference (default: 300)
+- `debug` (bool): Whether to print detailed debug information (default: False)
+
+**Returns:**
+- String containing the reasoning result
+
+### `model.install_nvidia_pytorch()`
+
+Explicitly installs NVIDIA's PyTorch wheel for optimal performance on Jetson devices.
+
+**Returns:**
+- `bool`: True if installation was successful, False otherwise
+
+## Example Output
+
+### Visual Question Answering
+
+```json
+{
+  "path/to/image.jpg": "A red car parked next to a blue building."
+}
+```
+
+### Image Captioning
+
+```json
+{
+  "path/to/image1.jpg": "A group of people sitting around a table having dinner.",
+  "path/to/image2.jpg": "A mountain landscape with snow-capped peaks and a clear blue sky."
+}
+```
+
+### Multimodal Reasoning
+
+```
+The image shows a bustling city street during rush hour. There are several cars and buses on the road, with pedestrians crossing at a crosswalk. The buildings on either side appear to be commercial, with shops and restaurants on the ground floor. The weather seems clear with good visibility.
+
+Given the context of a busy rush hour, it's likely that traffic will continue to be heavy for some time. The pedestrians crossing the street will reach the other side and continue to their destinations. Some people might enter the shops or restaurants visible in the image. The public transportation vehicles will stop to pick up and drop off passengers. As time progresses, if this is an evening rush hour, the street lights might turn on as it gets darker.
+```
+
+## Visual Feedback
+
+The InternVL2.5 model provides rich visual feedback during execution:
+
+```
+✨ EXLA SDK - InternVL2.5 Model ✨
+🔍 Device Detected: AGX_ORIN
+
+📊 Initial System Resources:
+📊 Resource Monitor - NVIDIA Jetson AGX Orin
+💻 System Memory: 4.5GB / 15.6GB (29%)
+
+⠏ [0.6s] Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+✓ [0.7s] Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+
+🚀 Running Visual Question Answering
+✓ [0.3s] Processed image
+⠋ [1.5s] Loading InternVL2.5 model
+Using GPU: Orin
+✓ [5.2s] Model ready on CUDA
+⠋ [0.0s] Running VQA inference
+✓ [1.2s] Inference completed successfully
+✓ [0.1s] Processing results
+
+✨ InternVL2.5 Inference Summary:
+   • Model: internvl/internvl2-5b
+   • Device: CUDA
+   • Images processed: 1
+   • Total time: 7.35s
+```
