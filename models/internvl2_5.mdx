@@ -12,6 +12,7 @@ InternVL2.5 is a powerful multimodal vision-language model that connects visual 
 - **Hardware-Optimized**: Automatically detects your hardware and uses the appropriate implementation:
   - **Jetson Devices** (Orin Nano, AGX Orin): GPU-accelerated implementation
   - **Standard GPUs**: GPU-accelerated implementation with CUDA
+  - **Apple Silicon**: MPS (Metal Performance Shaders) acceleration for macOS devices
   - **CPU-only Systems**: Optimized CPU implementation
   
 - **Real-time Progress Indicators**: Visual feedback with rotating spinners and timing information
@@ -112,14 +113,6 @@ results = model.vqa(...)
 
 ## Performance Considerations
 
-### Hardware Comparison
-
-| Hardware | Model Loading | VQA (1 image) | Caption (1 image) | Total Time |
-|----------|---------------|---------------|-------------------|------------|
-| Jetson AGX Orin (GPU) | ~5-7s | ~1.2s | ~0.9s | ~7-9s |
-| Standard GPU | ~4-6s | ~0.8s | ~0.6s | ~5-7s |
-| CPU | ~10-12s | ~3-5s | ~2-4s | ~15-20s |
-
 ### Python Version
 
 For Jetson devices, Python 3.10 is strongly recommended as the NVIDIA PyTorch wheel is specifically built for this version. Using other Python versions will result in CPU-only inference, which is significantly slower.
@@ -219,21 +212,20 @@ The InternVL2.5 model provides rich visual feedback during execution:
 📊 Resource Monitor - NVIDIA Jetson AGX Orin
 💻 System Memory: 4.5GB / 15.6GB (29%)
 
-⠏ [0.6s] Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
-✓ [0.7s] Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+⠏ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+✓ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
 
 🚀 Running Visual Question Answering
-✓ [0.3s] Processed image
-⠋ [1.5s] Loading InternVL2.5 model
+✓ Processed image
+⠋ Loading InternVL2.5 model
 Using GPU: Orin
-✓ [5.2s] Model ready on CUDA
-⠋ [0.0s] Running VQA inference
-✓ [1.2s] Inference completed successfully
-✓ [0.1s] Processing results
+✓ Model ready on CUDA
+⠋ Running VQA inference
+✓ Inference completed successfully
+✓ Processing results
 
 ✨ InternVL2.5 Inference Summary:
    • Model: internvl/internvl2-5b
    • Device: CUDA
    • Images processed: 1
-   • Total time: 7.35s
 ```
