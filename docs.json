@@ -29,7 +29,8 @@
             "group": "Multimodal",
             "pages": [
               "models/clip",
-              "models/robopoint"
+              "models/robopoint",
+              "models/internvl2_5"
             ]
           },
           {
