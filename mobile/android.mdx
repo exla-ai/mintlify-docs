@@ -1,250 +1,319 @@
 ---
-title: "Android SDK"
-description: "Run Exla's Optimized Llama 3.2 3B locally on your Android device"
+title: 'Android SDK'
+description: "Run InferX models locally on your Android device"
 ---
 
-# Exla AI SDK for Android
+# InferX Android SDK
 
-The Exla Android SDK allows you to run state-of-the-art AI text generation directly on your Android device, without requiring an internet connection for inference.
+The InferX Android SDK allows you to run state-of-the-art AI models directly on your Android device, without requiring an internet connection for inference. Same API, optimized for mobile.
 
-## Demo App
+## Features
 
-We provide a simple Android application that demonstrates the usage of the Exla AI SDK:
+- **Offline Inference**: Run models locally without internet connection
+- **Cross-Device Compatibility**: Same API across mobile and server deployments
+- **Optimized Performance**: Hardware-accelerated inference on mobile devices
+- **Easy Integration**: Simple SDK integration into existing Android apps
 
-### Features
+We provide a complete Android application that demonstrates the usage of the InferX Android SDK:
 
-- Download and initialize the Llama 3.2 3B model on your device
-- Enter prompts and generate AI responses locally (no internet required for inference)
-- Simple and intuitive user interface
+**Example Repository**: [github.com/exla-ai/InferX-android-example](https://github.com/exla-ai/InferX-android-example)
 
-### Demo
-To view a demo of using the SDK, take a look at the example: https://github.com/exla-ai/exla-android-sdk-example
+## Quick Start
 
-Replace the username in this [file](https://github.com/exla-ai/exla-android-sdk-example/blob/main/settings.gradle.kts) with 
-the auth token provided to you.
+### Prerequisites
 
-### Requirements
+1. Android Studio installed
+2. Android device or emulator (API level 21+)
+3. JitPack repository access
 
-- Android 7.0 (API level 24) or higher
-- Approximately 2.5GB of free storage space
-- At least 4GB of RAM recommended
+To view a demo of using the SDK, check out the example: [github.com/exla-ai/InferX-android-example](https://github.com/exla-ai/InferX-android-example)
 
-### Setup Instructions
+## Setting Up the SDK
 
-#### JitPack API Token
+### 1. Configure JitPack Repository
 
-We will provide you with a JitPack API token for accessing the SDK. When you receive the token:
-
-1. Add it to your project's `settings.gradle.kts` file as shown in the Installation section
-2. The token allows you to download the Exla AI SDK from JitPack
-
-#### Build and Run
-
-1. Open the project in Android Studio
-2. Sync project with Gradle files
-3. Build and run the app on your device or emulator
-
-### Usage
-
-1. Launch the app
-2. Press the "Download Model" button to initialize the SDK, which will automatically download the Llama 3.2 3B model
-3. Wait for the download and initialization to complete (~1.3GB download)
-4. Enter your prompt in the text field
-5. Press "Ask AI" to generate a response
-6. The AI-generated response will appear in the response section
-
-### UI Design
-
-The app features a clean, simple UI with:
-
-- Status display at the top
-- Download button and progress bar
-- Text input for questions
-- Response area that scrolls for longer responses
-
-### Privacy
-
-All text generation happens entirely on your device. The app only connects to the internet once to download the model file. No data is sent to remote servers during text generation.
-
-## SDK Features
-
-- 🚀 **Fully On-Device**: All processing happens on your device, ensuring privacy and offline usage
-- 📱 **Optimized for Mobile**: Uses quantized models specifically designed for mobile devices
-- ⚡ **Fast Responses**: Efficient implementation for quick text generation
-- 🧠 **Llama 3.2 3B**: Powered by Meta's latest Llama 3.2 3B Instruct model
-
-## Installation
-
-### Step 1: Add JitPack Repository
-
-Add the JitPack repository to your project's `settings.gradle.kts` using the token we provide:
+Add JitPack to your project-level `build.gradle` or `build.gradle.kts`:
 
 ```kotlin
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+// build.gradle.kts (Project level)
+allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url = uri("https://jitpack.io")
-            credentials {
-                username = "jp_xxxxxxxxxxxxxxxxxxxxxxxx" // We will provide this JitPack API token
-            }
-        }
+        maven { url = uri("https://jitpack.io") }
     }
 }
 ```
 
-### Step 2: Add SDK Dependency
+### 2. Add SDK Dependency
 
-Add the Exla AI SDK dependency to your app's `build.gradle.kts`:
+Add the InferX Android SDK dependency to your app's `build.gradle.kts`:
 
 ```kotlin
+// build.gradle.kts (App level)
 dependencies {
-    implementation("com.github.exla-ai:exla-android-sdk:407fc21173")
+    implementation("com.github.exla-ai:InferX-android-sdk:latest-version")
+    
+    // Required dependencies
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
 }
 ```
 
-### Step 3: Add Required Permissions
+### 3. Add Permissions
 
-Ensure your `AndroidManifest.xml` includes the necessary permissions:
+Add required permissions to your `AndroidManifest.xml`:
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+<uses-permission android:name="android.permission.CAMERA" />
 ```
 
-## Using the SDK
+## Basic Usage
 
-### 1. Initialize the SDK
-
-First, get an instance of the SDK:
+### Initialize the SDK
 
 ```kotlin
-// Get the SDK instance
-val sdk = ExlaAiSdk.getInstance(applicationContext)
-```
+import com.inferx.android.InferXSdk
 
-The SDK follows the singleton pattern, so you only need to get the instance once.
-
-### 2. Download the Model
-
-The SDK automatically downloads the Llama 3.2 3B model when initialized. This only needs to be done once as the model will be cached for future use:
-
-```kotlin
-sdk.initialize(
-    progressCallback = { progress -> 
-        // Update UI with download progress (0-100)
-        runOnUiThread {
-            progressBar.progress = progress
-            statusTextView.text = "Downloading model: $progress%"
-        }
-    },
-    completionCallback = { success ->
-        runOnUiThread {
-            if (success) {
-                // Model loaded successfully
-                statusTextView.text = "Model ready!"
-            } else {
-                // Model download or initialization failed
-                statusTextView.text = "Model initialization failed"
-            }
-        }
-    }
-)
-```
-
-You don't need to specify the model or manage its download location - the SDK handles everything automatically. The download process requires an internet connection, so make sure to verify network connectivity before starting.
-
-### 3. Check if the Model is Ready
-
-After initialization, you can check if the model is ready to use:
-
-```kotlin
-if (sdk.isReady()) {
-    // Model is loaded and ready for inference
-} else {
-    // Model is not yet loaded
-}
-```
-
-### 4. Generate Text
-
-Once the model is ready, you can generate text responses:
-
-```kotlin
-sdk.askAI(prompt) { response ->
-    runOnUiThread {
-        // Update UI with the generated text
-        outputTextView.text = response
-    }
-}
-```
-
-Note that the response callback may run on a background thread, so you should use `runOnUiThread` to update UI elements.
-
-## Model Details
-
-The SDK automatically downloads and uses Llama 3.2 3B Instruct (Q2_K.gguf) - a 2-bit quantized version of the Llama 3.2 3B model optimized for mobile devices.
-
-- **Model Size**: ~1.3GB download
-- **Capabilities**: Text completion, question answering, simple reasoning
-- **Languages**: Primarily English, with limited support for other languages
-- **Context Window**: 2048 tokens
-
-## Complete Example
-
-Here's a basic example of how to use the Exla AI SDK:
-
-```kotlin
-class ExlaAiDemoActivity : AppCompatActivity() {
-    private lateinit var sdk: ExlaAiSdk
+class MainActivity : AppCompatActivity() {
+    private lateinit var sdk: InferXSdk
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
         
-        // Initialize the SDK
-        sdk = ExlaAiSdk.getInstance(applicationContext)
+        // Initialize InferX SDK
+        sdk = InferXSdk.getInstance(applicationContext)
         
-        // Check if model is already downloaded
-        if (sdk.isReady()) {
-            // Model is ready, you can start using it
-            generateAIResponse("What is the capital of France?")
-        } else {
-            // Download the model
-            downloadModel()
-        }
+        // Setup model download and initialization
+        setupModel()
     }
     
-    private fun downloadModel() {
-        // Start model download and initialization
-        sdk.initialize(
-            progressCallback = { progress -> 
-                // Handle download progress (0-100)
-                Log.d("ExlaAI", "Download progress: $progress%")
-            },
-            completionCallback = { success ->
+    private fun setupModel() {
+        // Download and initialize the model
+        sdk.downloadModel("clip") { progress ->
+            runOnUiThread {
+                Log.d("InferX", "Download progress: $progress%")
+                // Update your progress UI here
+            }
+        }
+        
+        sdk.initializeModel("clip") { success ->
+            runOnUiThread {
                 if (success) {
-                    // Model downloaded and initialized successfully
-                    Log.d("ExlaAI", "Model ready")
-                    
-                    // Now you can start using the model
-                    generateAIResponse("What is the capital of France?")
+                    Log.d("InferX", "Model ready")
+                    // Enable inference UI
                 } else {
-                    // Model download or initialization failed
-                    Log.d("ExlaAI", "Model initialization failed")
+                    Log.e("InferX", "Model initialization failed")
                 }
             }
-        )
-    }
-    
-    private fun generateAIResponse(prompt: String) {
-        // Generate AI response
-        sdk.askAI(prompt) { response ->
-            // Handle the generated response
-            Log.d("ExlaAI", "AI Response: $response")
         }
     }
 }
 ```
+
+### Run Inference
+
+```kotlin
+// Image-text matching with CLIP
+private fun runImageTextMatching() {
+    val imageBitmap = loadImageFromAssets("sample_image.jpg")
+    val textQueries = listOf("a photo of a dog", "a photo of a cat", "a landscape")
+    
+    sdk.runInference("clip", imageBitmap, textQueries) { results ->
+        runOnUiThread {
+            // Process results
+            results?.let { 
+                Log.d("InferX", "AI Response: $results")
+                displayResults(results)
+            }
+        }
+    }
+}
+
+private fun loadImageFromAssets(fileName: String): Bitmap? {
+    return try {
+        val inputStream = assets.open(fileName)
+        BitmapFactory.decodeStream(inputStream)
+    } catch (e: IOException) {
+        Log.e("InferX", "Error loading image: ${e.message}")
+        null
+    }
+}
+```
+
+## Advanced Usage
+
+### Custom Model Configuration
+
+```kotlin
+// Configure model with custom parameters
+val modelConfig = ModelConfig.Builder()
+    .setModelName("clip")
+    .setMaxInputSize(512)
+    .setOptimizationLevel(OptimizationLevel.HIGH)
+    .setCacheSize(100) // MB
+    .build()
+
+sdk.initializeModel(modelConfig) { success ->
+    // Handle initialization result
+}
+```
+
+### Real-time Camera Processing
+
+```kotlin
+private fun setupCameraInference() {
+    val cameraManager = getSystemService(Context.CAMERA_SERVICE) as CameraManager
+    
+    // Setup camera preview and capture
+    sdk.startCameraInference("clip") { bitmap, results ->
+        runOnUiThread {
+            // Update UI with real-time results
+            displayCameraResults(bitmap, results)
+        }
+    }
+}
+```
+
+### Batch Processing
+
+```kotlin
+private fun processBatchImages() {
+    val imageList = listOf(
+        loadImageFromAssets("image1.jpg"),
+        loadImageFromAssets("image2.jpg"),
+        loadImageFromAssets("image3.jpg")
+    ).filterNotNull()
+    
+    val textQueries = listOf("a photo of a dog", "a photo of a cat")
+    
+    sdk.runBatchInference("clip", imageList, textQueries) { batchResults ->
+        runOnUiThread {
+            batchResults.forEachIndexed { index, result ->
+                Log.d("InferX", "Image $index result: $result")
+            }
+        }
+    }
+}
+```
+
+## Complete Example
+
+Here's a basic example of how to use the InferX Android SDK:
+
+```kotlin
+class InferXDemoActivity : AppCompatActivity() {
+    private lateinit var sdk: InferXSdk
+    private lateinit var progressBar: ProgressBar
+    private lateinit var resultTextView: TextView
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_demo)
+        
+        progressBar = findViewById(R.id.progressBar)
+        resultTextView = findViewById(R.id.resultTextView)
+        
+        // Initialize SDK
+        sdk = InferXSdk.getInstance(applicationContext)
+        
+        // Setup model
+        setupModel()
+    }
+    
+    private fun setupModel() {
+        progressBar.visibility = View.VISIBLE
+        
+        // Download model with progress tracking
+        sdk.downloadModel("clip") { progress ->
+            runOnUiThread {
+                Log.d("InferX", "Download progress: $progress%")
+                progressBar.progress = progress
+            }
+        }
+        
+        // Initialize model
+        sdk.initializeModel("clip") { success ->
+            runOnUiThread {
+                progressBar.visibility = View.GONE
+                if (success) {
+                    Log.d("InferX", "Model ready")
+                    resultTextView.text = "Model ready! Tap to run inference."
+                    setupInferenceButton()
+                } else {
+                    Log.d("InferX", "Model initialization failed")
+                    resultTextView.text = "Failed to initialize model"
+                }
+            }
+        }
+    }
+    
+    private fun setupInferenceButton() {
+        findViewById<Button>(R.id.inferenceButton).setOnClickListener {
+            runInference()
+        }
+    }
+    
+    private fun runInference() {
+        val bitmap = loadSampleImage()
+        val queries = listOf("a photo of a dog", "a photo of a cat", "a landscape")
+        
+        sdk.runInference("clip", bitmap, queries) { results ->
+            runOnUiThread {
+                Log.d("InferX", "AI Response: $results")
+                resultTextView.text = "Results: $results"
+            }
+        }
+    }
+    
+    private fun loadSampleImage(): Bitmap? {
+        // Load your sample image here
+        return BitmapFactory.decodeResource(resources, R.drawable.sample_image)
+    }
+}
+```
+
+## Performance Tips
+
+- **Model Caching**: Models are automatically cached after first download
+- **Batch Processing**: Use batch inference for multiple images to improve efficiency  
+- **Memory Management**: Release models when not needed to free memory
+- **Thread Management**: SDK handles threading automatically, but avoid blocking the main thread
+
+## Supported Models
+
+The Android SDK currently supports:
+
+- **CLIP**: Image-text matching and understanding
+- **MobileNet**: Efficient image classification
+- **ResNet**: High-accuracy image classification
+
+More models coming soon!
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Model Download Fails**: Check internet connection and storage space
+2. **Inference Slow**: Ensure device has sufficient RAM and consider reducing input size
+3. **Crashes on Older Devices**: Check minimum API level requirements
+
+### Debug Mode
+
+Enable debug logging to get more detailed information:
+
+```kotlin
+InferXSdk.setDebugMode(true)
+```
+
+## Next Steps
+
+- Explore the [full example app](https://github.com/exla-ai/InferX-android-example)
+- Try different [InferX models](/models) in your app
+- Learn about [optimizing mobile performance](/models/custom-models/overview)
 

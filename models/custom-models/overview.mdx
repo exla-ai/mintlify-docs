@@ -1,179 +1,475 @@
 ---
-title: 'Overview of custom models'
-description: 'Learn how to optimize and deploy custom models with the Exla SDK'
+title: "Custom Models Overview"
+description: "How to optimize and deploy your own models with InferX"
 ---
 
-# Custom Models Overview
+# Custom Models with InferX
 
-The Exla SDK provides powerful hardware-aware optimization for your custom machine learning models. With just a few lines of code, you can dramatically improve inference speed and reduce model size while maintaining accuracy.
+InferX provides powerful tools to optimize and deploy your own custom models across different hardware platforms. Whether you have a PyTorch, TensorFlow, or ONNX model, InferX can help you achieve optimal performance on any device.
 
-## Quick Start: Optimize Your Model
-
-Optimizing your model with Exla is as simple as:
+## Optimization Pipeline
 
 ```python
-from exla.optimize import optimize_model
-import torch
+from inferx.optimize import optimize_model
 
-# Load and optimize your model
-model_path = "your_model.pt"
-optimized_model = optimize_model(model_path)
-
-# Run inference with the optimized model
-input_tensor = torch.randn(1, 3, 224, 224).cuda()
-predictions = optimized_model(input_tensor)
-```
-
-### Example using a pre-trained model
-
-**Download the model**
-```python
-import torch
-import torchvision.models as models
-
-# Load the pretrained EfficientNet-B0 model
-model = models.efficientnet_b0(pretrained=True)
-model.eval()  # set to evaluation mode
-
-# Save the full model locally (this saves both architecture and weights)
-torch.save(model, "efficientnet_b0_full.pt")
-```
-
-**Optimize the model**
-```python
-from exla.optimize import optimize_model
-import torch
-
-# Load and optimize the model with FP16 precision
-model_path = "efficientnet_b0_full.pt"
+# Optimize your custom model
 optimized_model = optimize_model(
-    model_path
+    model_path="path/to/your/model.pth",
+    target_device="auto",  # Auto-detects your hardware
+    optimization_level="aggressive"
 )
 
-# Run inference with batch size 1
-# Random input to represent an RGB image
-input_tensor = torch.randn(1, 3, 224, 224).cuda()
-predictions = optimized_model(input_tensor)
-    
-# Print top 5 predictions
-probs = torch.nn.functional.softmax(predictions[0], dim=0)
-_, top5_indices = torch.topk(probs, 5)
-print("\nTop 5 predictions:")
-for idx in top5_indices:
-    print(f"Class {idx.item()}: {probs[idx].item()*100:.1f}%")
+# Use the optimized model
+result = optimized_model.inference(input_data)
 ```
+
 ## Supported Model Formats
 
-Exla supports models from popular frameworks:
-- PyTorch (`.pth`, `.pt`)
-- TorchScript
-- ONNX (`.onnx`)
-- TensorFlow SavedModel
+InferX supports multiple model formats and frameworks:
 
-## What is happening behind the scenes?
-
-Exla employs several sophisticated techniques to optimize your models:
-
-### 1. TensorRT Compilation
-
-For GPU targets, Exla uses TensorRT to compile your model with optimizations like:
-
-- **Operation Fusion**: Combines multiple operations (e.g., Conv+BatchNorm+ReLU) into single, optimized kernels
-- **Kernel Auto-Tuning**: Selects the most efficient implementation for your specific GPU
-- **Memory Access Optimization**: Improves memory access patterns for faster execution
-- **Dynamic Tensor Memory**: Efficiently reuses memory during inference
-
-### 2. Precision Optimization
-
-Exla supports multiple precision levels to balance accuracy and performance:
-
-- **FP32 (32-bit floating point)**: Baseline precision with no accuracy loss
-- **FP16 (16-bit floating point)**: ~2x smaller models with minimal accuracy impact
-- **INT8 (8-bit integer quantization)**: ~4x smaller models with significant speed improvements
-- **INT4 (4-bit integer quantization)**: ~8x smaller models with significant speed improvements
-- **Lower precision support coming soon**
+### PyTorch Models
 
 ```python
-# Specify precision during optimization
-optimized_model = optimize_model(
-    model_path,
-    precision="fp16"  # Options: "fp32", "fp16", "int8"
+import torch
+from inferx.optimize import optimize_model
+
+# Load your PyTorch model
+model = torch.load("my_model.pth")
+
+# Optimize for current hardware
+optimized = optimize_model(
+    model=model,
+    input_shape=(1, 3, 224, 224),
+    optimization_level="balanced"
+)
+
+# Deploy with automatic hardware detection
+result = optimized.inference(input_tensor)
+```
+
+### TensorFlow/Keras Models
+
+```python
+import tensorflow as tf
+from inferx.optimize import optimize_model
+
+# Load TensorFlow model
+model = tf.keras.models.load_model("my_model.h5")
+
+# Optimize for edge deployment
+optimized = optimize_model(
+    model=model,
+    target_device="jetson",
+    precision="fp16"  # Use half precision for speed
 )
 ```
 
-### 3. ZeroQ Quantization
-
-Exla implements ZeroQ, a data-free quantization technique that:
-
-- Generates synthetic calibration data matching your model's statistics
-- Optimizes quantization parameters without requiring real data
-- Preserves accuracy by analyzing BatchNorm statistics
-- Enables INT8 quantization with minimal accuracy loss
-
-Under the hood, Exla:
-1. Analyzes your model's BatchNorm layers
-2. Generates synthetic data that matches the statistical distribution
-3. Uses this data to calibrate the quantization process
-4. Verifies accuracy against the original model
-
-### 4. Workspace Memory Optimization
-
-Exla carefully manages GPU memory usage:
+### ONNX Models
 
 ```python
-# Configure workspace memory
-optimized_model = optimize_model(
-    model_path,
-    workspace_size=1 << 20  # 1 MB workspace
+from inferx.optimize import optimize_model
+
+# Optimize ONNX model
+optimized = optimize_model(
+    model_path="model.onnx",
+    target_device="gpu",
+    batch_size=4
 )
 ```
 
-### 5. Dynamic Shape Support
+## Hardware-Specific Optimizations
 
-For models that need to handle variable input sizes:
+### Jetson Optimization
 
 ```python
-# Enable dynamic shape support
-optimized_model = optimize_model(
-    model_path,
-    dynamic_shape=True
+# Optimize specifically for Jetson devices
+jetson_model = optimize_model(
+    model_path="model.pth",
+    target_device="jetson",
+    optimization_config={
+        "precision": "fp16",
+        "max_workspace_size": "1GB",
+        "dla_cores": 2,  # Use Deep Learning Accelerator
+        "enable_tensorrt": True
+    }
 )
 ```
 
-## Performance Improvements
+### GPU Optimization
 
-When you optimize a model with Exla, you can expect:
+```python
+# Optimize for high-end GPUs
+gpu_model = optimize_model(
+    model_path="model.pth", 
+    target_device="gpu",
+    optimization_config={
+        "precision": "mixed",  # Mixed precision training
+        "batch_size": 32,
+        "enable_tensorrt": True,
+        "enable_cudnn": True
+    }
+)
+```
 
-- **2-5x faster inference** depending on the model and hardware
-- **50-75% reduction in memory usage** with quantization
-- **4x smaller model size** with INT8 quantization
-- **Minimal accuracy loss** with our precision-preserving techniques
+### CPU Optimization
 
-## Behind the Scenes: The Optimization Pipeline
+```python
+# Optimize for CPU deployment
+cpu_model = optimize_model(
+    model_path="model.pth",
+    target_device="cpu",
+    optimization_config={
+        "num_threads": 8,
+        "enable_mkldnn": True,
+        "quantization": "int8"
+    }
+)
+```
 
-Here's what happens when you call `optimize_model()`:
+## Advanced Optimization Features
 
-1. **Model Analysis**
-   - Loads your model and analyzes its architecture
-   - Determines the optimal optimization strategy
-   - Measures baseline performance metrics
+### Dynamic Batch Size
 
-2. **Synthetic Data Generation**
-   - Creates calibration data using BatchNorm statistics
-   - Ensures quantization preserves the model's statistical properties
-   - Eliminates the need for real calibration data
+```python
+# Support variable batch sizes
+model = optimize_model(
+    model_path="model.pth",
+    input_shape=[(1, 3, 224, 224), (4, 3, 224, 224), (8, 3, 224, 224)],
+    dynamic_axes={'input': {0: 'batch_size'}}
+)
 
-3. **TensorRT Compilation**
-   - Converts your model to TensorRT format
-   - Applies kernel fusion and other optimizations
-   - Selects the most efficient implementation for your GPU
+# Use with different batch sizes
+single_result = model.inference(single_image)
+batch_result = model.inference(batch_images)
+```
 
-4. **Accuracy Verification**
-   - Compares predictions between original and optimized models
-   - Ensures top-1 and top-5 accuracy remain high
-   - Validates that optimization preserves model behavior
+### Quantization
 
-5. **Performance Measurement**
-   - Benchmarks inference speed
-   - Measures memory usage reduction
-   - Calculates overall speedup factor
+```python
+# Apply quantization for smaller models
+quantized_model = optimize_model(
+    model_path="large_model.pth",
+    quantization_config={
+        "method": "dynamic",  # or "static", "qat"
+        "precision": "int8",
+        "calibration_dataset": calibration_data
+    }
+)
+
+print(f"Model size reduced by {quantized_model.compression_ratio:.2f}x")
+```
+
+### Pruning
+
+```python
+# Apply model pruning to reduce parameters
+pruned_model = optimize_model(
+    model_path="model.pth",
+    pruning_config={
+        "method": "magnitude",
+        "sparsity": 0.5,  # Remove 50% of parameters
+        "structured": False
+    }
+)
+```
+
+## Performance Monitoring
+
+### Benchmarking
+
+```python
+from inferx.benchmark import benchmark_model
+
+# Comprehensive performance analysis
+results = benchmark_model(
+    model=optimized_model,
+    input_shape=(1, 3, 224, 224),
+    num_runs=1000,
+    warmup_runs=50
+)
+
+print(f"Average inference time: {results['avg_time']:.2f}ms")
+print(f"Throughput: {results['throughput']:.1f} FPS")
+print(f"Memory usage: {results['memory_mb']:.1f}MB")
+```
+
+### Real-time Monitoring
+
+```python
+import time
+import psutil
+
+class ModelMonitor:
+    def __init__(self, model):
+        self.model = model
+        self.metrics = []
+    
+    def inference_with_monitoring(self, input_data):
+        start_time = time.time()
+        cpu_before = psutil.cpu_percent()
+        memory_before = psutil.virtual_memory().percent
+        
+        # Run inference
+        result = self.model.inference(input_data)
+        
+        end_time = time.time()
+        cpu_after = psutil.cpu_percent()
+        memory_after = psutil.virtual_memory().percent
+        
+        # Log metrics
+        metrics = {
+            'inference_time': end_time - start_time,
+            'cpu_usage': cpu_after - cpu_before,
+            'memory_delta': memory_after - memory_before,
+            'timestamp': time.time()
+        }
+        
+        self.metrics.append(metrics)
+        return result, metrics
+
+# Usage
+monitor = ModelMonitor(optimized_model)
+result, perf = monitor.inference_with_monitoring(test_input)
+print(f"Inference took {perf['inference_time']*1000:.2f}ms")
+```
+
+## Example: Complete Custom Model Pipeline
+
+### 1. Model Training (External)
+
+```python
+# Your existing training code
+import torch
+import torch.nn as nn
+
+class CustomClassifier(nn.Module):
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.backbone = torchvision.models.resnet18(pretrained=True)
+        self.backbone.fc = nn.Linear(512, num_classes)
+    
+    def forward(self, x):
+        return self.backbone(x)
+
+# Train your model
+model = CustomClassifier(num_classes=10)
+# ... training code ...
+torch.save(model.state_dict(), "custom_classifier.pth")
+```
+
+### 2. InferX Optimization
+
+```python
+from inferx.optimize import optimize_model
+
+# Load and optimize the trained model
+model_state = torch.load("custom_classifier.pth")
+model = CustomClassifier(num_classes=10)
+model.load_state_dict(model_state)
+
+# Optimize for deployment
+optimized_model = optimize_model(
+    model=model,
+    input_shape=(1, 3, 224, 224),
+    target_device="auto",
+    optimization_config={
+        "precision": "fp16",
+        "enable_tensorrt": True,
+        "optimization_level": "aggressive"
+    }
+)
+
+# Save optimized model
+optimized_model.save("custom_classifier_optimized.inferx")
+```
+
+### 3. Deployment
+
+```python
+from inferx.models import load_model
+import cv2
+import numpy as np
+
+# Load optimized model
+model = load_model("custom_classifier_optimized.inferx")
+
+# Preprocess function
+def preprocess_image(image_path):
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (224, 224))
+    image = image.astype(np.float32) / 255.0
+    image = np.transpose(image, (2, 0, 1))  # HWC to CHW
+    image = np.expand_dims(image, axis=0)   # Add batch dimension
+    return image
+
+# Run inference
+image = preprocess_image("test_image.jpg")
+result = model.inference(image)
+
+print(f"Predicted class: {result['predicted_class']}")
+print(f"Confidence: {result['confidence']:.3f}")
+```
+
+## Production Deployment
+
+### Docker Container
+
+```dockerfile
+FROM inferx/runtime:latest
+
+# Copy your optimized model
+COPY custom_classifier_optimized.inferx /app/model/
+
+# Copy application code
+COPY app.py /app/
+
+# Install dependencies
+RUN pip install opencv-python numpy
+
+# Expose port
+EXPOSE 8080
+
+# Run application
+CMD ["python", "/app/app.py"]
+```
+
+### Kubernetes Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-model-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: custom-model
+  template:
+    metadata:
+      labels:
+        app: custom-model
+    spec:
+      containers:
+      - name: inferx-model
+        image: your-registry/custom-model:latest
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+        env:
+        - name: INFERX_DEVICE
+          value: "auto"
+        - name: INFERX_BATCH_SIZE
+          value: "4"
+```
+
+## Best Practices
+
+### 1. Model Validation
+
+```python
+# Always validate optimized model accuracy
+def validate_optimized_model(original_model, optimized_model, test_data):
+    original_outputs = []
+    optimized_outputs = []
+    
+    for batch in test_data:
+        orig_out = original_model(batch)
+        opt_out = optimized_model.inference(batch)
+        
+        original_outputs.append(orig_out)
+        optimized_outputs.append(opt_out)
+    
+    # Calculate accuracy difference
+    accuracy_diff = compare_accuracy(original_outputs, optimized_outputs)
+    print(f"Accuracy difference: {accuracy_diff:.2%}")
+    
+    return accuracy_diff < 0.01  # Less than 1% difference
+
+is_valid = validate_optimized_model(original, optimized, validation_data)
+```
+
+### 2. Progressive Optimization
+
+```python
+# Start with conservative optimization
+conservative_model = optimize_model(
+    model=model,
+    optimization_level="conservative"
+)
+
+# If performance is good, try more aggressive optimization
+if validate_model(conservative_model):
+    aggressive_model = optimize_model(
+        model=model,
+        optimization_level="aggressive"
+    )
+    
+    if validate_model(aggressive_model):
+        # Use aggressive optimization
+        final_model = aggressive_model
+    else:
+        # Fall back to conservative
+        final_model = conservative_model
+```
+
+### 3. Hardware-Specific Testing
+
+```python
+# Test on multiple hardware configurations
+def test_across_hardware(model_path):
+    devices = ["cpu", "gpu", "jetson"]
+    results = {}
+    
+    for device in devices:
+        try:
+            optimized = optimize_model(
+                model_path=model_path,
+                target_device=device
+            )
+            
+            benchmark = benchmark_model(optimized)
+            results[device] = benchmark
+            
+        except Exception as e:
+            print(f"Failed to optimize for {device}: {e}")
+            results[device] = None
+    
+    return results
+
+performance_results = test_across_hardware("my_model.pth")
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Memory Issues**: Reduce batch size or enable gradient checkpointing
+2. **Accuracy Loss**: Use less aggressive quantization or pruning
+3. **Slow Inference**: Check if hardware-specific optimizations are enabled
+4. **Compatibility Issues**: Verify model format and input shapes
+
+### Debug Mode
+
+```python
+# Enable debug mode for detailed optimization logs
+optimized_model = optimize_model(
+    model_path="model.pth",
+    debug=True,
+    verbose=True
+)
+
+# Check optimization report
+print(optimized_model.optimization_report)
+```
+
+## Next Steps
+
+- Learn about [specific model types](/models) supported by InferX
+- Explore [hardware optimization guides](https://github.com/exla-ai/InferX/tree/main/docs/hardware)
+- Check out [production deployment examples](https://github.com/exla-ai/InferX-examples/tree/main/production)
+- Join our [community discussions](https://github.com/exla-ai/InferX/discussions) for help and tips

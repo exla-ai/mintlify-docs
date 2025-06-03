@@ -1,59 +1,235 @@
 ---
-title: 'Whisper'
-description: 'A powerful speech recognition model for audio transcription and translation'
+title: "Whisper"
+description: "Speech recognition and transcription optimized for any device"
 ---
 
-# Whisper
+# Whisper Model
 
-Whisper is a versatile automatic speech recognition (ASR) model designed for transcribing and translating spoken language. It's optimized for edge deployment through the Exla SDK.
+Whisper is OpenAI's robust speech recognition and transcription model. With InferX, you can run Whisper on any device using the same API - from edge devices to powerful servers.
 
-## Overview
+## Features
 
-Whisper is a robust speech recognition model that can:
+- **Universal Speech Recognition**: Transcribe audio in multiple languages
+- **Real-time Processing**: Optimized for live audio streams
+- **Cross-Platform**: Same code works on Jetson, GPU, or CPU
+- **Multiple Languages**: Support for 99+ languages
+- **Noise Robust**: Works well with noisy audio
 
-- Transcribe speech to text in multiple languages
-- Translate spoken language to English
-- Handle various audio qualities and accents
-- Process audio files of different formats
+## Installation
 
-## Usage
+Whisper is included with InferX:
 
-Here's a simple example of how to use Whisper for speech transcription:
-
-```python
-from exla.models.whisper import whisper
-
-audio_path = "data/speech.wav"
-model = whisper()
-
-result = model.transcribe(audio_path)
-
-print(result["text"])
+```bash
+pip install git+https://github.com/exla-ai/InferX.git
 ```
 
-## Example Output
+## Basic Usage
 
-The model returns a dictionary containing the transcription and additional metadata:
+```python
+from inferx.models.whisper import whisper
+
+# Initialize the model (automatically detects your hardware)
+model = whisper()
+
+# Transcribe audio file
+result = model.inference(audio_path="path/to/audio.wav")
+
+# Print transcription
+print(f"Transcription: {result['text']}")
+print(f"Language: {result['language']}")
+print(f"Confidence: {result['confidence']}")
+```
+
+## Advanced Usage
+
+### Real-time Audio Processing
+
+```python
+from inferx.models.whisper import whisper
+import pyaudio
+import numpy as np
+
+model = whisper()
+
+# Setup audio capture
+chunk_size = 1024
+sample_rate = 16000
+audio = pyaudio.PyAudio()
+
+stream = audio.open(
+    format=pyaudio.paFloat32,
+    channels=1,
+    rate=sample_rate,
+    input=True,
+    frames_per_buffer=chunk_size
+)
+
+print("Listening... Press Ctrl+C to stop")
+
+try:
+    while True:
+        # Read audio chunk
+        audio_chunk = stream.read(chunk_size)
+        audio_data = np.frombuffer(audio_chunk, dtype=np.float32)
+        
+        # Transcribe
+        result = model.inference(audio_data=audio_data)
+        
+        if result['text'].strip():
+            print(f"Transcription: {result['text']}")
+            
+except KeyboardInterrupt:
+    print("Stopping...")
+finally:
+    stream.stop_stream()
+    stream.close()
+    audio.terminate()
+```
+
+### Batch Processing
+
+```python
+import os
+
+model = whisper()
+
+# Process multiple audio files
+audio_files = [f for f in os.listdir("audio_folder/") if f.endswith(('.wav', '.mp3', '.m4a'))]
+
+for audio_file in audio_files:
+    result = model.inference(audio_path=f"audio_folder/{audio_file}")
+    
+    # Save transcription
+    transcript_file = audio_file.replace('.wav', '.txt').replace('.mp3', '.txt').replace('.m4a', '.txt')
+    with open(f"transcripts/{transcript_file}", 'w') as f:
+        f.write(result['text'])
+    
+    print(f"Processed: {audio_file} -> {transcript_file}")
+```
+
+### Language-Specific Transcription
+
+```python
+# Force specific language
+result = model.inference(
+    audio_path="spanish_audio.wav",
+    language="es"  # Spanish
+)
+
+# Auto-detect language
+result = model.inference(
+    audio_path="unknown_language.wav",
+    detect_language=True
+)
+
+print(f"Detected language: {result['language']}")
+```
+
+## Performance
+
+InferX optimizes Whisper for your hardware:
+
+| Hardware | Real-time Factor | Memory Usage |
+|----------|------------------|--------------|
+| Jetson AGX Orin | ~0.3x | ~2GB |
+| RTX 4090 | ~0.1x | ~3GB |
+| Intel i7 CPU | ~0.8x | ~1GB |
+
+*Real-time factor: 0.3x means 1 minute of audio processes in ~18 seconds*
+
+## Response Format
 
 ```python
 {
-    "text": "Hello, this is a test of the Whisper speech recognition model.",
-    "segments": [
+    'text': str,           # Transcribed text
+    'language': str,       # Detected/specified language code
+    'confidence': float,   # Overall confidence score (0-1)
+    'segments': [          # Word-level timestamps
         {
-            "id": 0,
-            "start": 0.0,
-            "end": 3.5,
-            "text": "Hello, this is a test of the",
-            "confidence": 0.95
-        },
-        {
-            "id": 1,
-            "start": 3.5,
-            "end": 5.8,
-            "text": "Whisper speech recognition model.",
-            "confidence": 0.92
+            'start': float,    # Start time in seconds
+            'end': float,      # End time in seconds
+            'text': str,       # Text segment
+            'confidence': float
         }
-    ],
-    "language": "en"
+    ]
 }
 ```
+
+## Supported Audio Formats
+
+- **WAV**: Uncompressed audio (recommended)
+- **MP3**: MPEG audio
+- **M4A**: AAC audio
+- **FLAC**: Lossless audio
+- **OGG**: Ogg Vorbis
+
+## Example Applications
+
+### Meeting Transcription
+
+```python
+from inferx.models.whisper import whisper
+
+model = whisper()
+
+# Transcribe meeting recording
+result = model.inference(
+    audio_path="meeting_recording.wav",
+    segment_timestamps=True
+)
+
+# Generate meeting notes with timestamps
+with open("meeting_notes.txt", "w") as f:
+    f.write(f"Meeting Transcription\n")
+    f.write(f"Language: {result['language']}\n\n")
+    
+    for segment in result['segments']:
+        timestamp = f"[{segment['start']:.1f}s - {segment['end']:.1f}s]"
+        f.write(f"{timestamp}: {segment['text']}\n")
+```
+
+### Voice Commands
+
+```python
+import speech_recognition as sr
+
+model = whisper()
+
+def process_voice_command(audio_data):
+    result = model.inference(audio_data=audio_data)
+    command = result['text'].lower().strip()
+    
+    if 'turn on lights' in command:
+        return 'lights_on'
+    elif 'play music' in command:
+        return 'music_play'
+    elif 'what time' in command:
+        return 'time_query'
+    else:
+        return 'unknown'
+
+# Use with speech recognition
+recognizer = sr.Recognizer()
+microphone = sr.Microphone()
+
+with microphone as source:
+    audio = recognizer.listen(source)
+    
+command = process_voice_command(audio.get_raw_data())
+print(f"Command: {command}")
+```
+
+## Hardware Detection
+
+```
+✨ InferX - Whisper Model ✨
+🔍 Device Detected: AGX_ORIN
+⠏ [0.8s] Loading Whisper model
+✓ [1.0s] Ready for speech recognition
+```
+
+## Next Steps
+
+- Try [CLIP model](/models/clip) for multimodal understanding
+- Explore [practical examples](https://github.com/exla-ai/InferX-examples/tree/main/whisper)
+- Learn about [combining models for advanced workflows](/models/custom-models/overview)

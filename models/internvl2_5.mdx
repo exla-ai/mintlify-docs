@@ -23,16 +23,16 @@ InternVL2.5 is a powerful multimodal vision-language model that connects visual 
 
 ## Installation
 
-The InternVL2.5 model is included in the Exla SDK. No separate installation is required.
+The InternVL2.5 model is included with InferX:
 
 ```bash
-pip install exla-sdk
+pip install git+https://github.com/exla-ai/InferX.git
 ```
 
 ## Basic Usage
 
 ```python
-from exla.models.internvl2_5 import internvl2_5
+from inferx.models.internvl2_5 import internvl2_5
 import json
 
 # Initialize the model (automatically detects your hardware)
@@ -183,14 +183,14 @@ Given the context of a busy rush hour, it's likely that traffic will continue to
 The InternVL2.5 model provides rich visual feedback during execution:
 
 ```
-✨ EXLA SDK - InternVL2.5 Model ✨
+✨ InferX - InternVL2.5 Model ✨
 🔍 Device Detected: AGX_ORIN
 
 📊 Initial System Resources:
 📊 Resource Monitor - NVIDIA Jetson AGX Orin
 
-⠏ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
-✓ Initializing Exla Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+⠏ Initializing InferX Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
+✓ Initializing InferX Optimized InternVL2.5 model for AGX_ORIN [GPU Mode]
 
 🚀 Running Visual Question Answering
 ✓ Processed image
@@ -206,3 +206,9 @@ Using GPU: Orin
    • Device: CUDA
    • Images processed: 1
 ```
+
+## Next Steps
+
+- Try [CLIP model](/models/clip) for simpler image-text matching
+- Explore [practical examples](https://github.com/exla-ai/InferX-examples/tree/main/internvl2_5)
+- Learn about [custom model optimization](/models/custom-models/overview)

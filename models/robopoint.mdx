@@ -1,75 +1,248 @@
 ---
-title: 'RoboPoint VLA'
-description: 'Multimodal model for robotic perception and understanding'
+title: 'RoboPoint'
+description: 'Keypoint affordance prediction for robotic manipulation'
 ---
 
-# RoboPoint
+# RoboPoint Model
 
-RoboPoint is a powerful multimodal model optimized for robotic perception and understanding. It combines visual and language capabilities to enable robots to understand their environment and follow instructions.
+RoboPoint is a specialized multimodal model for robotic perception and understanding. With InferX, you can run RoboPoint on any device using the same API - perfect for robotics applications across different hardware platforms.
 
-## Environment Setup
+## Features
 
-Before using RoboPoint, you need to set up your environment:
+- **Multimodal Understanding**: Combines vision and language for comprehensive scene understanding
+- **Keypoint Detection**: Identifies manipulation points for robotic grasping
+- **Cross-Platform**: Same code works on Jetson, GPU, or CPU
+- **Real-time Performance**: Optimized for robotics applications
+- **Natural Language**: Understands human instructions in natural language
 
-1. First, install the Exla SDK by following the [installation instructions](/quickstart)
+## Installation
 
-2. Clone the examples repository:
-```bash
-git clone https://github.com/exla-ai/exla-sdk-examples.git
-```
-
-3. Navigate to the RoboPoint example directory:
-```bash
-cd exla-sdk-examples/robopoint
-```
-
-## Running RoboPoint
-
-You can run the RoboPoint example with a single command:
+RoboPoint is included with InferX:
 
 ```bash
-python example_robopoint.py
+pip install git+https://github.com/exla-ai/InferX.git
 ```
 
-This will:
-1. Load the optimized RoboPoint model
-2. Process sample images
-3. Demonstrate multimodal capabilities
-
-## Example Code
-
-Here's a simplified version of how to use RoboPoint in your own projects:
+## Basic Usage
 
 ```python
-from exla.models.robopoint import robopoint
+from inferx.models.robopoint import robopoint
+import cv2
+
+# Initialize the model
+model = robopoint()
+
+# Load an image
+image = cv2.imread("path/to/your/image.jpg")
+
+# Run inference with text instruction
+results = model.inference(
+    image=image,
+    text_instruction="Find grasping points on the cup"
+)
+
+# Process results
+print(f"Detected keypoints: {len(results['keypoints'])}")
+for i, keypoint in enumerate(results['keypoints']):
+    print(f"Keypoint {i}: ({keypoint['x']}, {keypoint['y']}) - confidence: {keypoint['confidence']}")
+```
+
+## Advanced Usage
+
+### Interactive Robot Control
+
+```python
+from inferx.models.robopoint import robopoint
+import cv2
+
+# Initialize model
+model = robopoint()
+
+# Capture from camera
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    
+    # Get user instruction
+    instruction = input("Enter instruction (or 'quit'): ")
+    if instruction.lower() == 'quit':
+        break
+    
+    # Run inference
+    results = model.inference(
+        image=frame,
+        text_instruction=instruction
+    )
+    
+    # Visualize keypoints
+    for keypoint in results['keypoints']:
+        cv2.circle(frame, 
+                  (int(keypoint['x']), int(keypoint['y'])), 
+                  5, (0, 255, 0), -1)
+        cv2.putText(frame, f"{keypoint['confidence']:.2f}", 
+                   (int(keypoint['x']), int(keypoint['y']-10)),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+    
+    cv2.imshow('RoboPoint', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
+```
+
+### Batch Processing for Dataset Creation
+
+```python
+from inferx.models.robopoint import robopoint
+import os
+import json
 
 model = robopoint()
 
-model.inference(
-    image_path="data/sink.jpg",
-    text_instruction="Find a few spots within the vacant area on the rightmost white plate.",
-    output="data/sink_output.png"
-)   
+# Process multiple images with different tasks
+tasks = [
+    "Find grasping points on objects",
+    "Identify manipulation areas",
+    "Locate safe handling points"
+]
+
+results_dataset = []
+
+for filename in os.listdir("robot_images/"):
+    if filename.endswith(('.jpg', '.png')):
+        image_path = f"robot_images/{filename}"
+        image = cv2.imread(image_path)
+        
+        for task in tasks:
+            results = model.inference(
+                image=image,
+                text_instruction=task
+            )
+            
+            # Store results
+            results_dataset.append({
+                'image': filename,
+                'task': task,
+                'keypoints': results['keypoints']
+            })
+
+# Save dataset
+with open('robot_keypoints_dataset.json', 'w') as f:
+    json.dump(results_dataset, f, indent=2)
 ```
 
-## Key Features
+## Example Instructions
 
-- **Multimodal Understanding**: Combines vision and language for comprehensive scene understanding
-- **Object Detection**: Identifies and localizes objects in the environment
-- **Instruction Following**: Interprets natural language instructions in the context of visual scenes
-- **Spatial Reasoning**: Understands spatial relationships between objects
-- **Hardware Optimized**: Runs efficiently on NVIDIA GPUs
+RoboPoint understands various natural language instructions:
 
-## Use Cases
+- **Grasping**: "Find the best grasping points on the bottle"
+- **Manipulation**: "Identify areas where I can safely manipulate this object"
+- **Spatial Understanding**: "Show me empty spaces on the table"
+- **Object-specific**: "Find spots on the rightmost plate where I can place items"
 
-- **Robotic Manipulation**: Identify objects for grasping and manipulation
-- **Navigation**: Understand the environment for safe navigation
-- **Human-Robot Interaction**: Follow natural language instructions
-- **Scene Understanding**: Analyze complex scenes and relationships between objects
+## Performance
 
+InferX optimizes RoboPoint for your hardware:
+
+| Hardware | Inference Time | Memory Usage |
+|----------|----------------|--------------|
+| Jetson AGX Orin | ~150ms | ~3GB |
+| RTX 4090 | ~60ms | ~4GB |
+| Intel i7 CPU | ~800ms | ~2GB |
+
+## Response Format
+
+```python
+{
+    'keypoints': [
+        {
+            'x': float,           # X coordinate
+            'y': float,           # Y coordinate
+            'confidence': float,  # Confidence score (0-1)
+            'type': str          # Keypoint type (grasp, manipulation, etc.)
+        }
+    ],
+    'regions': [
+        {
+            'bbox': [x1, y1, x2, y2],  # Bounding box
+            'confidence': float,
+            'description': str
+        }
+    ]
+}
+```
+
+## Integration with Robot Frameworks
+
+### ROS Integration
+
+```python
+#!/usr/bin/env python3
+import rospy
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+from inferx.models.robopoint import robopoint
+
+class RoboPointNode:
+    def __init__(self):
+        rospy.init_node('robopoint_node')
+        self.bridge = CvBridge()
+        self.model = robopoint()
+        
+        # Subscribe to camera topic
+        self.image_sub = rospy.Subscriber('/camera/image_raw', Image, self.image_callback)
+        
+        # Publisher for keypoints
+        self.keypoint_pub = rospy.Publisher('/robopoint/keypoints', KeyPointArray, queue_size=1)
+    
+    def image_callback(self, msg):
+        # Convert ROS image to OpenCV
+        cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        
+        # Get instruction from parameter server
+        instruction = rospy.get_param('~instruction', 'Find grasping points')
+        
+        # Run inference
+        results = self.model.inference(
+            image=cv_image,
+            text_instruction=instruction
+        )
+        
+        # Publish results
+        self.publish_keypoints(results['keypoints'])
+    
+    def publish_keypoints(self, keypoints):
+        # Convert to ROS message and publish
+        # Implementation depends on your message type
+        pass
+
+if __name__ == '__main__':
+    node = RoboPointNode()
+    rospy.spin()
+```
+
+## Hardware Detection
+
+```
+✨ InferX - RoboPoint Model ✨
+🔍 Device Detected: AGX_ORIN
+⠏ [0.8s] Loading RoboPoint model
+✓ [1.0s] Ready for robotic perception
+```
+
+## Example Applications
+
+- **Pick and Place**: Identify optimal grasping points for robotic arms
+- **Object Manipulation**: Find safe areas to push, pull, or rotate objects
+- **Scene Understanding**: Understand spatial relationships for navigation
+- **Human-Robot Interaction**: Interpret natural language commands
 
 ## Next Steps
 
-- Explore the [full example code](https://github.com/exla-ai/exla-sdk-examples/tree/main/robopoint)
-- Learn about [optimizing your own models](/models/custom-models/overview)
-- Check out other [multimodal models](/models/clip) 
+- Explore [CLIP model](/models/clip) for general image understanding
+- Check out [practical robotics examples](https://github.com/exla-ai/InferX-examples/tree/main/robopoint)
+- Learn about [combining models for advanced workflows](/models/custom-models/overview) 

@@ -1,97 +1,166 @@
 ---
-title: 'Deepseek'
-description: 'A powerful large language model for text generation and reasoning'
+title: 'DeepSeek R1'
+description: 'A powerful large language model for text generation and reasoning optimized for any device'
 ---
 
-# Deepseek
+# DeepSeek R1 Model
 
-Deepseek is a powerful large language model (LLM) designed for text generation, reasoning, and code generation tasks. This model is optimized for performance on edge devices through the Exla SDK.
+DeepSeek R1 is a powerful large language model (LLM) designed for text generation, reasoning, and code generation tasks. With InferX, you can run DeepSeek R1 on any device using the same API - from edge devices to powerful servers.
 
-## Overview
+## Features
 
-Deepseek is a state-of-the-art language model that can be used for a variety of natural language processing tasks, including:
+- **Advanced Reasoning**: State-of-the-art reasoning and problem-solving capabilities
+- **Code Generation**: Expert-level code generation and explanation
+- **Cross-Platform**: Same code works on Jetson, GPU, or CPU
+- **Hardware-Optimized**: Automatically detects and optimizes for your hardware
+- **Real-time Processing**: Optimized for fast inference across all platforms
 
-- Text generation and completion
-- Question answering
-- Code generation and explanation
-- Reasoning and problem-solving
+## Installation
 
-## Usage
+DeepSeek R1 is included with InferX:
 
-Here's a simple example of how to use the Deepseek model for text generation:
+```bash
+pip install git+https://github.com/exla-ai/InferX.git
+```
+
+## Basic Usage
 
 ```python
-from exla.models.deepseek_r1 import deepseek_r1
+from inferx.models.deepseek_r1 import deepseek_r1
 
+# Initialize the model (automatically detects your hardware)
 model = deepseek_r1()
 
+# Run the interactive interface
 model.run()
 ```
 
-## Parameters
+## Advanced Usage
 
-When generating text with Deepseek, you can customize various parameters:
+### Text Generation
 
 ```python
+# Generate text with custom parameters
 response = model.generate(
-    "Write a short poem about artificial intelligence.",
+    prompt="Write a short poem about artificial intelligence.",
     max_tokens=100,
     temperature=0.7,
     top_p=0.9,
     top_k=40
 )
+
+print(response)
 ```
 
-| Parameter | Description | Default |
-| --- | --- | --- |
-| `max_tokens` | Maximum number of tokens to generate | 256 |
-| `temperature` | Controls randomness (higher = more random) | 0.8 |
-| `top_p` | Nucleus sampling parameter | 0.95 |
-| `top_k` | Limits vocabulary to top k tokens | 40 |
-
-## Advanced Usage
-
-### Streaming Responses
-
-For applications that require real-time responses, you can use the streaming API:
+### Code Generation
 
 ```python
-model = DeepseekR1()
+# Generate and explain code
+code_response = model.generate(
+    prompt="Write a Python function to calculate the Fibonacci sequence",
+    max_tokens=200,
+    temperature=0.3  # Lower temperature for more deterministic code
+)
 
-for chunk in model.generate_stream("Explain quantum computing."):
-    print(chunk, end="", flush=True)
+print(code_response)
 ```
 
 ### System Prompts
 
-You can provide system prompts to guide the model's behavior:
-
 ```python
+# Use system prompts to guide behavior
 response = model.generate(
-    "What is machine learning?",
-    system_prompt="You are a helpful AI assistant that explains complex topics in simple terms."
+    prompt="What is machine learning?",
+    system_prompt="You are a helpful AI assistant that explains complex topics in simple terms.",
+    max_tokens=150
 )
+
+print(response)
 ```
 
-## Performance Considerations
+## Parameters
 
-The Deepseek model is optimized for edge deployment but still requires significant computational resources. Consider the following when using this model:
+| Parameter | Description | Default | Range |
+|-----------|-------------|---------|-------|
+| `max_tokens` | Maximum number of tokens to generate | 256 | 1-2048 |
+| `temperature` | Controls randomness (higher = more random) | 0.8 | 0.0-2.0 |
+| `top_p` | Nucleus sampling parameter | 0.95 | 0.0-1.0 |
+| `top_k` | Limits vocabulary to top k tokens | 40 | 1-100 |
 
-- Memory usage: ~2GB
-- Inference speed depends on the hardware capabilities
-- For longer generations, consider using streaming to improve user experience
+## Performance
+
+InferX optimizes DeepSeek R1 for your hardware:
+
+| Hardware | Tokens/Second | Memory Usage |
+|----------|---------------|--------------|
+| Jetson AGX Orin | ~15 | ~8GB |
+| RTX 4090 | ~50 | ~12GB |
+| Intel i7 CPU | ~5 | ~6GB |
 
 ## Example Applications
 
-- Chatbots and virtual assistants
-- Content generation tools
-- Code completion systems
-- Educational applications
+### Chatbot Development
 
-## Limitations
+```python
+def create_chatbot():
+    model = deepseek_r1()
+    
+    print("DeepSeek R1 Chatbot (type 'exit' to quit)")
+    
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == 'exit':
+            break
+            
+        response = model.generate(
+            prompt=user_input,
+            system_prompt="You are a helpful assistant.",
+            max_tokens=200
+        )
+        
+        print(f"Assistant: {response}")
 
-- May occasionally generate incorrect or nonsensical information
-- Performance varies based on prompt quality and complexity
-- Not suitable for real-time applications on very resource-constrained devices
+# Run the chatbot
+create_chatbot()
+```
 
-For more information on optimizing model performance, see the [Custom Models Optimization](/models/custom-models/optimization) guide. 
+### Code Assistant
+
+```python
+def code_assistant():
+    model = deepseek_r1()
+    
+    system_prompt = """You are an expert programmer. Provide clear, 
+    well-commented code solutions and explanations."""
+    
+    while True:
+        question = input("Code question: ")
+        if question.lower() == 'exit':
+            break
+            
+        response = model.generate(
+            prompt=question,
+            system_prompt=system_prompt,
+            temperature=0.3,  # More deterministic for code
+            max_tokens=300
+        )
+        
+        print(f"Solution:\n{response}\n")
+
+code_assistant()
+```
+
+## Hardware Detection
+
+```
+✨ InferX - DeepSeek R1 Model ✨
+🔍 Device Detected: AGX_ORIN
+⠏ [2.5s] Loading DeepSeek R1 model
+✓ [3.0s] Ready for text generation
+```
+
+## Next Steps
+
+- Try [CLIP model](/models/clip) for multimodal understanding
+- Explore [practical examples](https://github.com/exla-ai/InferX-examples/tree/main/deepseek_r1)
+- Learn about [custom model optimization](/models/custom-models/overview) 

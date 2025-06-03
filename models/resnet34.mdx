@@ -1,115 +1,276 @@
 ---
-title: 'ResNet34'
-description: 'A powerful residual network for image classification with high accuracy'
+title: "ResNet34"
+description: "High-accuracy image classification optimized for any device"
 ---
 
-# ResNet34
+# ResNet34 Model
 
-ResNet34 is a deep residual neural network architecture designed for image classification tasks. It offers a good balance between model size and accuracy, making it suitable for a wide range of computer vision applications.
+ResNet34 is a powerful convolutional neural network for image classification. With InferX, you can run ResNet34 on any device using the same API - from edge devices to powerful servers.
 
-## Overview
+## Features
 
-ResNet34 is part of the ResNet (Residual Network) family, which introduced skip connections to solve the vanishing gradient problem in deep neural networks. Key features include:
+- **High Accuracy**: Excellent performance on image classification tasks
+- **Cross-Platform**: Same code works on Jetson, GPU, or CPU
+- **Pre-trained**: Ready to use with ImageNet weights
+- **Fast Inference**: Optimized for real-time applications
+- **1000 Classes**: Supports all ImageNet classes
 
-- 34-layer deep architecture with residual connections
-- Higher accuracy than lightweight models like MobileNet
-- Reasonable computational requirements for edge deployment
-- Robust feature extraction capabilities
+## Installation
 
-## Usage
+ResNet34 is included with InferX:
 
-Here's a simple example of how to use ResNet34 for image classification:
-
-```python
-from exla.models.resnet34 import ResNet34
-from PIL import Image
-
-# Initialize the model
-model = ResNet34()
-
-# Load an image
-image = Image.open("path/to/your/image.jpg")
-
-# Classify the image
-predictions = model.classify(image)
-print(predictions)
+```bash
+pip install git+https://github.com/exla-ai/InferX.git
 ```
 
-## Example Output
-
-The model returns a list of predictions with class labels and confidence scores:
+## Basic Usage
 
 ```python
-[
-    {"label": "golden retriever", "score": 0.92},
-    {"label": "Labrador retriever", "score": 0.05},
-    {"label": "tennis ball", "score": 0.01},
-    # ... more predictions
-]
+from inferx.models.resnet34 import ResNet34
+import cv2
+
+# Initialize the model (automatically detects your hardware)
+model = ResNet34()
+
+# Load and classify an image
+image = cv2.imread("path/to/your/image.jpg")
+results = model.inference(image)
+
+# Print top predictions
+for prediction in results['predictions'][:5]:
+    print(f"{prediction['class']}: {prediction['confidence']:.3f}")
 ```
 
 ## Advanced Usage
 
 ### Batch Processing
 
-For processing multiple images efficiently:
-
 ```python
-images = [Image.open(f) for f in ["image1.jpg", "image2.jpg", "image3.jpg"]]
-batch_predictions = model.classify_batch(images)
+from inferx.models.resnet34 import ResNet34
+import cv2
+import os
+
+model = ResNet34()
+
+# Process multiple images
+image_folder = "path/to/images/"
+images = []
+filenames = []
+
+for filename in os.listdir(image_folder):
+    if filename.endswith(('.jpg', '.png', '.jpeg')):
+        image_path = os.path.join(image_folder, filename)
+        image = cv2.imread(image_path)
+        images.append(image)
+        filenames.append(filename)
+
+# Batch inference
+results = model.batch_inference(images)
+
+# Process results
+for filename, result in zip(filenames, results):
+    top_prediction = result['predictions'][0]
+    print(f"{filename}: {top_prediction['class']} ({top_prediction['confidence']:.3f})")
 ```
 
-### Feature Extraction
-
-You can use ResNet34 as a feature extractor for downstream tasks:
+### Real-time Camera Classification
 
 ```python
-# Extract features from the image
-features = model.extract_features(image)
+from inferx.models.resnet34 import ResNet34
+import cv2
 
-# Use these features for custom downstream tasks
-# such as custom classifiers, clustering, etc.
+model = ResNet34()
+
+# Open camera
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    
+    # Run inference
+    results = model.inference(frame)
+    
+    # Display top prediction
+    if results['predictions']:
+        top_pred = results['predictions'][0]
+        text = f"{top_pred['class']}: {top_pred['confidence']:.2f}"
+        
+        cv2.putText(frame, text, (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    
+    cv2.imshow('ResNet34 Classification', frame)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
 ```
 
-### Custom Top-K
-
-You can specify how many top predictions to return:
+### Custom Confidence Threshold
 
 ```python
-# Return only the top 5 predictions
-predictions = model.classify(image, top_k=5)
+# Filter predictions by confidence threshold
+results = model.inference(
+    image, 
+    confidence_threshold=0.5,
+    top_k=10
+)
+
+# Only show high-confidence predictions
+high_confidence = [
+    pred for pred in results['predictions'] 
+    if pred['confidence'] > 0.7
+]
+
+for pred in high_confidence:
+    print(f"High confidence: {pred['class']} ({pred['confidence']:.3f})")
 ```
 
-## Performance Considerations
+## Performance
 
-ResNet34 provides a good balance between accuracy and computational requirements:
+InferX optimizes ResNet34 for your hardware:
 
-- Memory usage: ~80MB
-- Inference time: Typically 50-200ms on modern devices
-- Higher accuracy than MobileNet, but requires more computational resources
+| Hardware | Inference Time | Memory Usage | Throughput |
+|----------|----------------|--------------|------------|
+| Jetson AGX Orin | ~15ms | ~1GB | ~65 FPS |
+| RTX 4090 | ~5ms | ~2GB | ~200 FPS |
+| Intel i7 CPU | ~50ms | ~500MB | ~20 FPS |
+
+## Response Format
+
+```python
+{
+    'predictions': [
+        {
+            'class': str,        # Class name (e.g., "golden retriever")
+            'class_id': int,     # ImageNet class ID
+            'confidence': float  # Confidence score (0-1)
+        }
+    ],
+    'inference_time': float,     # Time taken for inference (seconds)
+    'preprocessing_time': float  # Time taken for preprocessing (seconds)
+}
+```
+
+## ImageNet Classes
+
+ResNet34 can classify 1000 different classes from ImageNet, including:
+
+- **Animals**: Dogs, cats, birds, wildlife
+- **Objects**: Vehicles, furniture, tools
+- **Food**: Fruits, vegetables, dishes
+- **Nature**: Plants, geological features
+- **And much more**: The complete list is available in the model documentation
 
 ## Example Applications
 
-- High-quality image classification
-- Object detection systems (when used as a backbone)
-- Content moderation
-- Medical image analysis
-- Industrial quality control
+### Photo Organizer
 
-## Limitations
+```python
+from inferx.models.resnet34 import ResNet34
+import os
+import shutil
 
-- Larger model size compared to MobileNet
-- Higher latency, which may impact real-time applications on resource-constrained devices
-- May struggle with very fine-grained classification tasks
+model = ResNet34()
 
-## Comparison with Other Models
+# Organize photos by detected objects
+source_folder = "unsorted_photos/"
+organized_folder = "organized_photos/"
 
-| Model | Size | Accuracy | Inference Speed |
-| --- | --- | --- | --- |
-| MobileNet | Small (~5MB) | Good | Fast |
-| ResNet34 | Medium (~80MB) | Better | Medium |
-| Vision Transformers | Large (>200MB) | Best | Slow |
+for filename in os.listdir(source_folder):
+    if filename.endswith(('.jpg', '.png', '.jpeg')):
+        image_path = os.path.join(source_folder, filename)
+        image = cv2.imread(image_path)
+        
+        results = model.inference(image)
+        
+        if results['predictions']:
+            top_class = results['predictions'][0]['class']
+            
+            # Create category folder
+            category_folder = os.path.join(organized_folder, top_class)
+            os.makedirs(category_folder, exist_ok=True)
+            
+            # Move file
+            destination = os.path.join(category_folder, filename)
+            shutil.move(image_path, destination)
+            
+            print(f"Moved {filename} to {top_class} folder")
+```
 
-For applications where model size and inference speed are critical, consider using [MobileNet](/models/mobilenet) instead.
+### Quality Control System
 
-For more information on optimizing model performance, see the [Custom Models Optimization](/models/custom-models/optimization) guide. 
+```python
+# Example for manufacturing quality control
+def check_product_quality(image_path, expected_class="product_name"):
+    model = ResNet34()
+    image = cv2.imread(image_path)
+    
+    results = model.inference(image, top_k=5)
+    
+    # Check if expected class is in top predictions
+    for pred in results['predictions']:
+        if expected_class.lower() in pred['class'].lower():
+            if pred['confidence'] > 0.8:
+                return "PASS", pred['confidence']
+            else:
+                return "LOW_CONFIDENCE", pred['confidence']
+    
+    return "FAIL", 0.0
+
+# Test product
+status, confidence = check_product_quality("product_image.jpg", "bottle")
+print(f"Quality Check: {status} (Confidence: {confidence:.3f})")
+```
+
+### Content Moderation
+
+```python
+# Basic content filtering example
+def classify_image_content(image_path):
+    model = ResNet34()
+    image = cv2.imread(image_path)
+    
+    results = model.inference(image, top_k=10)
+    
+    # Define categories of interest
+    animal_classes = ['dog', 'cat', 'bird', 'horse', 'cow']
+    vehicle_classes = ['car', 'truck', 'motorcycle', 'bicycle']
+    nature_classes = ['tree', 'flower', 'mountain', 'beach']
+    
+    categories = []
+    
+    for pred in results['predictions']:
+        class_name = pred['class'].lower()
+        
+        if any(animal in class_name for animal in animal_classes):
+            categories.append(f"Animal: {pred['class']}")
+        elif any(vehicle in class_name for vehicle in vehicle_classes):
+            categories.append(f"Vehicle: {pred['class']}")
+        elif any(nature in class_name for nature in nature_classes):
+            categories.append(f"Nature: {pred['class']}")
+    
+    return categories
+
+categories = classify_image_content("test_image.jpg")
+print("Image contains:", categories)
+```
+
+## Hardware Detection
+
+```
+✨ InferX - ResNet34 Model ✨
+🔍 Device Detected: AGX_ORIN
+⠏ [0.5s] Loading ResNet34 model
+✓ [0.7s] Ready for image classification
+```
+
+## Next Steps
+
+- Try [CLIP model](/models/clip) for multimodal understanding
+- Explore [MobileNet](/models/mobilenet) for lighter-weight classification
+- Check out [practical examples](https://github.com/exla-ai/InferX-examples/tree/main/resnet34)
+- Learn about [combining models for advanced workflows](/models/custom-models/overview) 

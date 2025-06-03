@@ -1,62 +1,66 @@
-# Exla Documentation
+# InferX Documentation
 
 [![Deployment Status](https://img.shields.io/badge/deployment-active-success)](https://exla.ai)
 
-Official documentation for Exla - Hardware-aware AI model optimization platform for edge devices.
+Official documentation for InferX - Open-source tool to run AI models on different devices with same API.
 
 ## Overview
 
-This repository contains the documentation for Exla, built with [Mintlify](https://mintlify.com). Exla is an advanced model optimization platform that makes AI models smaller, faster, and more deployable on constrained devices.
+This repository contains the documentation for InferX, built with [Mintlify](https://mintlify.com). InferX is an open-source tool that enables you to run AI models on different devices using the same API, with automatic hardware optimization.
 
-## Features Documented
+## Features
 
-- **Hardware-Aware Optimization:** Automatically selects the best implementation for your hardware platform
-- **Model Compression:** Reduces model size while maintaining accuracy
-- **Deployment Tools:** Simplifies model deployment on edge devices
-- **Model Catalog:** Documentation for all supported models:
-  - Multimodal: CLIP, RoboPoint
-  - Large Language Models: DeepSeek
-  - Computer Vision: SAM2, MobileNet, ResNet34
-  - Audio: Whisper
-  - Custom Model Optimization
+- **Universal API**: Same code works across all supported hardware platforms
+- **Hardware-Aware Optimization**: Automatically detects and optimizes for your specific device (NVIDIA Jetson, GPU, CPU)
+- **Open Source**: Fully open-source with no tokens or authentication required
+- **Easy Integration**: Drop-in replacement for existing model inference pipelines
+- **Multi-Platform Support**: Works across different edge computing platforms
 
-## Local Development
+## Available Models
 
-### Prerequisites
+- **CLIP**: Multimodal image-text matching
+- **RoboPoint**: Keypoint affordance prediction for robotics
+- **SAM2**: Advanced image segmentation
+- **MobileNet**: Efficient image classification
+- **ResNet34**: High-accuracy image classification
+- **Whisper**: Speech recognition and transcription
+- **DeepSeek**: Large language model capabilities
+- **InternVL2.5**: Advanced multimodal understanding
 
-- Node.js 18 or higher
-- npm or yarn
+## Quick Start
 
-### Installation
-
-1. Install Mintlify CLI:
 ```bash
-npm i -g mintlify
+# Install InferX
+pip install git+https://github.com/exla-ai/InferX.git
+
+# Use a model - same code works on any device
+from inferx.models.clip import clip
+model = clip()
+results = model.inference(
+    image_paths=["image1.jpg", "image2.jpg"],
+    text_queries=["a photo of a dog", "a photo of a cat"]
+)
 ```
 
-2. Run the documentation locally:
+## Development
+
+To run the documentation locally:
+
 ```bash
-mintlify dev
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
-
-The documentation will be available at [http://localhost:3000](http://localhost:3000).
-
-## Contributing
-
-We welcome contributions to improve our documentation! Please follow these steps:
-
-1. Fork this repository
-2. Create a new branch for your changes
-3. Make your changes to the documentation
-4. Test your changes locally using the Mintlify CLI
-5. Open a pull request
 
 ## Deployment
 
 The documentation is automatically deployed to [https://exla.ai](https://exla.ai) when changes are pushed to the main branch.
 
-## Contact
+## Community & Support
 
-- Email: contact@exla.ai
-- Twitter: [@exla_ai](https://x.com/exla_ai)
-- LinkedIn: [Exla](https://linkedin.com/company/106019408) 
+- **GitHub**: [github.com/exla-ai/InferX](https://github.com/exla-ai/InferX)
+- **Email**: contact@exla.ai
+- **Twitter**: [@exla_ai](https://x.com/exla_ai)
+- **LinkedIn**: [Exla](https://linkedin.com/company/106019408) 

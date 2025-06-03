@@ -1,11 +1,21 @@
 ---
 title: 'Quickstart'
-description: 'Get started with Exla SDK in minutes'
+description: 'Get started with InferX in minutes'
 ---
 
-# Setup Guide
+# InferX Quickstart
 
-This guide will walk you through setting up your environment for using the Exla SDK. We'll cover installing the necessary tools, creating a virtual environment, and installing the SDK.
+## What is InferX?
+
+InferX is model wrapper tool we've been using internally to easily test and benchmark ML models across various hardware configurations. It automatically detects your hardware and prepares and executes model inference based on that device.
+
+This was mainly built to test models on A100/H100s and also Jetsons. Though this can be extended to support any device.
+
+**📊 [View Model & Platform Compatibility Matrix](https://github.com/exla-ai/InferX?tab=readme-ov-file#-model--platform-compatibility-matrix)**
+
+## Setup Guide
+
+This guide will walk you through setting up your environment for using InferX. We'll cover installing the necessary tools, creating a virtual environment, and installing the SDK.
 
 ## Prerequisites
 
@@ -13,7 +23,6 @@ Before you begin, make sure you have:
 
 - Python 3.10 or later installed
 - Git installed
-- Access to the Exla SDK repository (you'll need an access token)
 
 ## Step 1: Set up docker in sudo mode
 
@@ -38,7 +47,7 @@ This will install `uv` on your system. After installation, you may need to resta
 Create a new directory for your project and navigate into it:
 
 ```bash
-mkdir exla-project && cd exla-project
+mkdir inferx-project && cd inferx-project
 ```
 
 ## Step 4: Create a Virtual Environment
@@ -46,7 +55,7 @@ mkdir exla-project && cd exla-project
 Create a Python virtual environment using `uv`. We recommend using Python 3.10 for optimal compatibility:
 
 ```bash
-uv venv --python 3.10
+uv venv --python 3.13
 ```
 
 This creates a virtual environment in the `.venv` directory. Activate the virtual environment:
@@ -59,53 +68,44 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-## Step 5: Set the GitHub Token
+## Step 5: Install InferX
 
-Set the GitHub token as an environment variable:
-
-```bash
-export EXLA_TOKEN=xxxxxx # Replace with token provided by Exla team
-```
-
-## Step 6: Install the Exla SDK
-
-Install the Exla SDK directly from the GitHub repository using your access token:
+Install InferX directly from the GitHub repository:
 
 ```bash
-uv pip install git+https://${EXLA_TOKEN}@github.com/exla-ai/exla-sdk.git
+uv pip install git+https://github.com/exla-ai/InferX.git
 ```
 
-If everything is set up correctly, you should see the Exla SDK version and a success message!
+If everything is set up correctly, you should see the InferX version and a success message!
 
 
 ## Next Steps
 
-Now that you have set up your environment and tested the Exla SDK, you can:
+Now that you have set up your environment and tested InferX, you can:
 
 - Explore the [Quickstart Guide](/quickstart) for more examples
 - Check out the [CLIP model documentation](/models/clip) for image-text matching
 - Try the [RoboPoint model](/models/robopoint) for keypoint affordance prediction
-- Learn about [hardware compatibility](/compatibility) for optimized performance
+- Learn about [hardware compatibility](https://github.com/exla-ai/InferX?tab=readme-ov-file#-model--platform-compatibility-matrix) for optimized performance
 
 ## Troubleshooting
 
 If you encounter any issues during setup:
 
 - Make sure you're using Python 3.10 or later
-- Verify that your access token has the necessary permissions
 - Check that all dependencies are properly installed
 - Please don't hesitate to reach out to us on email at [contact@exla.ai](mailto:contact@exla.ai)
 
 # Getting Started with Your First Model
 
-Now that you have the Exla SDK installed, let's run your first model! We'll use the CLIP model, which is a powerful multimodal model that connects text and images.
+Now that you have InferX installed, let's run your first model! We'll use the CLIP model, which is a powerful multimodal model that connects text and images.
 
 ## Using CLIP for Image-Text Matching
 
 CLIP (Contrastive Language-Image Pretraining) allows you to find the best matching images for a given text description or vice versa. Here's how to use it:
 
 ```python
-from exla.models.clip import clip
+from inferx.models.clip import clip
 import json
 
 # Initialize the model (automatically detects your hardware)
@@ -125,7 +125,7 @@ print(json.dumps(results, indent=2))
 
 When you run this code:
 
-1. The Exla SDK automatically detects your hardware (Jetson, GPU, or CPU)
+1. InferX automatically detects your hardware (Jetson, GPU, or CPU)
 2. It loads the appropriate optimized implementation of CLIP
 3. The model processes your images and text queries
 4. It returns similarity scores between each image and text query
@@ -165,7 +165,7 @@ The output will look something like this:
 
 ## Next Steps with Models
 
-Now that you've run your first model, you can explore other models in the Exla SDK:
+Now that you've run your first model, you can explore other models in InferX:
 
 - **DeepSeek**: For large language model capabilities
 - **RoboPoint**: For keypoint affordance prediction in robotics
@@ -183,12 +183,12 @@ To help you get started quickly, we provide a repository of example code for all
 
 1. Clone the examples repository:
 ```bash
-git clone https://github.com/exla-ai/exla-sdk-examples.git
+git clone https://github.com/exla-ai/InferX-examples.git
 ```
 
 2. Navigate to the examples directory:
 ```bash
-cd exla-sdk-examples
+cd InferX-examples
 ```
 
 3. Explore the available examples:
@@ -257,4 +257,4 @@ After exploring the examples, you can:
 - Modify the examples to fit your specific use case
 - Integrate the code into your own projects
 - Learn about [advanced optimization techniques](/models/custom-models/overview)
-- Explore [hardware-specific optimizations](/compatibility)
+- Explore [hardware-specific optimizations](https://github.com/exla-ai/InferX?tab=readme-ov-file#-model--platform-compatibility-matrix)

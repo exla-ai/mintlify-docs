@@ -1,32 +1,31 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Exla",
+  "name": "InferX",
   "colors": {
     "primary": "#4F46E5",
     "light": "#818CF8",
     "dark": "#3730A3"
   },
   "favicon": "/logo/favicon.svg",
+  "icons": {
+    "library": "lucide"
+  },
   "navigation": {
-    "tabs": [
+    "dropdowns": [
       {
-        "tab": "Guides",
+        "dropdown": "InferX",
+        "icon": "zap",
+        "description": "OSS tool to run models on different devices with same API",
         "groups": [
           {
             "group": "Getting Started",
             "pages": [
-              "introduction",
               "quickstart"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Models",
-        "groups": [
+          },
           {
-            "group": "Multimodal",
+            "group": "Multimodal Models",
             "pages": [
               "models/clip",
               "models/robopoint",
@@ -40,33 +39,27 @@
             ]
           },
           {
-            "group": "Computer Vision",
+            "group": "Computer Vision Models",
             "pages": [
-              
               "models/sam2",
               "models/mobilenet",
               "models/resnet34"
             ]
           },
           {
-            "group": "Audio",
+            "group": "Audio Models",
             "pages": [
               "models/whisper"
             ]
           },
           {
-            "group": "Optimize your own models",
+            "group": "Custom Models",
             "pages": [
               "models/custom-models/overview"
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Mobile",
-        "groups": [
+          },
           {
-            "group": "SDK",
+            "group": "Mobile SDK",
             "pages": [
               "mobile/android"
             ]

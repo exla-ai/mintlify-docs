@@ -1,102 +1,377 @@
 ---
-title: 'MobileNet'
-description: 'A lightweight computer vision model for image classification on edge devices'
+title: "MobileNet"
+description: "Efficient image classification optimized for mobile and edge devices"
 ---
 
-# MobileNet
+# MobileNet Model
 
-MobileNet is a lightweight computer vision model designed specifically for mobile and edge devices. It provides efficient image classification capabilities while maintaining a small footprint.
+MobileNet is a lightweight convolutional neural network designed for mobile and edge devices. With InferX, you can run MobileNet on any device using the same API - perfect for resource-constrained environments.
 
-## Overview
+## Features
 
-MobileNet is optimized for scenarios where computational resources are limited but real-time image classification is required. Key features include:
+- **Lightweight**: Minimal memory footprint and fast inference
+- **Cross-Platform**: Same code works on Jetson, GPU, or CPU
+- **Mobile-Optimized**: Designed specifically for edge deployment
+- **Real-time**: Ultra-fast inference for live applications
+- **1000 Classes**: Full ImageNet classification support
 
-- Efficient architecture designed for mobile and edge devices
-- Good balance between accuracy and model size
-- Fast inference times
-- Suitable for real-time applications
+## Installation
 
-## Usage
+MobileNet is included with InferX:
 
-Here's a simple example of how to use MobileNet for image classification:
-
-```python
-from exla.models.mobilenet import MobileNet
-from PIL import Image
-
-# Initialize the model
-model = MobileNet()
-
-# Load an image
-image = Image.open("path/to/your/image.jpg")
-
-# Classify the image
-predictions = model.classify(image)
-print(predictions)
+```bash
+pip install git+https://github.com/exla-ai/InferX.git
 ```
 
-## Example Output
-
-The model returns a list of predictions with class labels and confidence scores:
+## Basic Usage
 
 ```python
-[
-    {"label": "golden retriever", "score": 0.85},
-    {"label": "Labrador retriever", "score": 0.10},
-    {"label": "tennis ball", "score": 0.03},
-    # ... more predictions
-]
+from inferx.models.mobilenet import MobileNet
+import cv2
+
+# Initialize the model (automatically detects your hardware)
+model = MobileNet()
+
+# Load and classify an image
+image = cv2.imread("path/to/your/image.jpg")
+results = model.inference(image)
+
+# Print top predictions
+for prediction in results['predictions'][:5]:
+    print(f"{prediction['class']}: {prediction['confidence']:.3f}")
 ```
 
 ## Advanced Usage
 
-### Batch Processing
-
-For processing multiple images efficiently:
+### Real-time Camera Classification
 
 ```python
-images = [Image.open(f) for f in ["image1.jpg", "image2.jpg", "image3.jpg"]]
-batch_predictions = model.classify_batch(images)
+from inferx.models.mobilenet import MobileNet
+import cv2
+
+model = MobileNet()
+
+# Open camera
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    
+    # Run fast inference
+    results = model.inference(frame)
+    
+    # Display top prediction
+    if results['predictions']:
+        top_pred = results['predictions'][0]
+        text = f"{top_pred['class']}: {top_pred['confidence']:.2f}"
+        
+        cv2.putText(frame, text, (10, 30), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    
+    cv2.imshow('MobileNet Real-time', frame)
+    
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
 ```
 
-### Custom Top-K
-
-You can specify how many top predictions to return:
+### Batch Processing for Efficiency
 
 ```python
-# Return only the top 3 predictions
-predictions = model.classify(image, top_k=3)
+from inferx.models.mobilenet import MobileNet
+import cv2
+import os
+
+model = MobileNet()
+
+# Load multiple images
+images = []
+filenames = []
+
+for filename in os.listdir("image_folder/"):
+    if filename.endswith(('.jpg', '.png', '.jpeg')):
+        image = cv2.imread(f"image_folder/{filename}")
+        images.append(image)
+        filenames.append(filename)
+
+# Process in batches for better efficiency
+batch_size = 32
+for i in range(0, len(images), batch_size):
+    batch = images[i:i+batch_size]
+    batch_filenames = filenames[i:i+batch_size]
+    
+    # Batch inference
+    batch_results = model.batch_inference(batch)
+    
+    # Process results
+    for filename, result in zip(batch_filenames, batch_results):
+        if result['predictions']:
+            top_pred = result['predictions'][0]
+            print(f"{filename}: {top_pred['class']} ({top_pred['confidence']:.3f})")
 ```
 
-## Performance Considerations
+### Edge Device Monitoring
 
-MobileNet is designed for efficiency, but there are still some considerations for optimal performance:
+```python
+import psutil
+import time
 
-- Memory usage: ~5-10MB
-- Inference time: Typically 10-50ms on modern devices
-- Power consumption: Lower than larger models like ResNet
+def monitor_performance():
+    model = MobileNet()
+    
+    # Test image
+    test_image = cv2.imread("test.jpg")
+    
+    # Warm up
+    for _ in range(5):
+        model.inference(test_image)
+    
+    # Performance test
+    start_time = time.time()
+    cpu_before = psutil.cpu_percent()
+    memory_before = psutil.virtual_memory().percent
+    
+    for _ in range(100):
+        results = model.inference(test_image)
+    
+    end_time = time.time()
+    cpu_after = psutil.cpu_percent()
+    memory_after = psutil.virtual_memory().percent
+    
+    print(f"100 inferences in {end_time - start_time:.2f}s")
+    print(f"Average FPS: {100 / (end_time - start_time):.1f}")
+    print(f"CPU usage: {cpu_before:.1f}% -> {cpu_after:.1f}%")
+    print(f"Memory usage: {memory_before:.1f}% -> {memory_after:.1f}%")
+
+monitor_performance()
+```
+
+## Performance
+
+MobileNet is optimized for speed and efficiency:
+
+| Hardware | Inference Time | Memory Usage | Throughput | Model Size |
+|----------|----------------|--------------|------------|------------|
+| Jetson Orin Nano | ~8ms | ~200MB | ~125 FPS | ~17MB |
+| Jetson AGX Orin | ~3ms | ~300MB | ~330 FPS | ~17MB |
+| RTX 4090 | ~1ms | ~500MB | ~1000 FPS | ~17MB |
+| Intel i7 CPU | ~20ms | ~150MB | ~50 FPS | ~17MB |
+
+## Response Format
+
+```python
+{
+    'predictions': [
+        {
+            'class': str,        # Class name (e.g., "golden retriever")
+            'class_id': int,     # ImageNet class ID (0-999)
+            'confidence': float  # Confidence score (0-1)
+        }
+    ],
+    'inference_time': float,     # Time taken for inference (seconds)
+    'preprocessing_time': float, # Time taken for preprocessing (seconds)
+    'model_size_mb': float      # Model memory footprint
+}
+```
+
+## Mobile-Specific Features
+
+### Power Efficiency
+
+```python
+# Configure for power efficiency
+results = model.inference(
+    image,
+    power_mode='efficient',  # Reduces CPU/GPU usage
+    precision='fp16'         # Uses half precision for speed
+)
+```
+
+### Adaptive Quality
+
+```python
+# Adjust processing based on device capabilities
+import psutil
+
+def adaptive_inference(image):
+    # Check system resources
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory_percent = psutil.virtual_memory().percent
+    
+    if cpu_percent > 80 or memory_percent > 85:
+        # Use lower resolution for faster processing
+        small_image = cv2.resize(image, (128, 128))
+        return model.inference(small_image, fast_mode=True)
+    else:
+        # Use full resolution
+        return model.inference(image)
+
+# Usage
+results = adaptive_inference(camera_frame)
+```
 
 ## Example Applications
 
-- Real-time object recognition in mobile apps
-- Smart camera features
-- Augmented reality applications
-- IoT devices with visual recognition capabilities
+### Smart Camera App
 
-## Limitations
+```python
+class SmartCameraApp:
+    def __init__(self):
+        self.model = MobileNet()
+        self.cap = cv2.VideoCapture(0)
+        
+    def detect_objects_continuous(self):
+        while True:
+            ret, frame = self.cap.read()
+            if not ret:
+                continue
+                
+            # Fast inference
+            results = self.model.inference(frame)
+            
+            # Display results
+            if results['predictions']:
+                top_pred = results['predictions'][0]
+                
+                # Only show high-confidence predictions
+                if top_pred['confidence'] > 0.3:
+                    self.display_prediction(frame, top_pred)
+            
+            # Show FPS
+            fps = 1.0 / results['inference_time']
+            cv2.putText(frame, f"FPS: {fps:.1f}", (10, 70),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+            
+            cv2.imshow('Smart Camera', frame)
+            
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+    
+    def display_prediction(self, frame, prediction):
+        text = f"{prediction['class']}: {prediction['confidence']:.2f}"
+        cv2.putText(frame, text, (10, 30),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
-- Lower accuracy compared to larger models like ResNet
-- Limited ability to detect small objects or fine details
-- Performance varies based on image quality and lighting conditions
+# Run the app
+app = SmartCameraApp()
+app.detect_objects_continuous()
+```
+
+### IoT Device Classification
+
+```python
+import json
+import time
+from datetime import datetime
+
+class IoTClassifier:
+    def __init__(self, device_id="device_001"):
+        self.model = MobileNet()
+        self.device_id = device_id
+        
+    def classify_and_log(self, image_path):
+        # Load and classify image
+        image = cv2.imread(image_path)
+        results = self.model.inference(image)
+        
+        # Create log entry
+        log_entry = {
+            'device_id': self.device_id,
+            'timestamp': datetime.now().isoformat(),
+            'image_path': image_path,
+            'predictions': results['predictions'][:3],  # Top 3
+            'inference_time': results['inference_time'],
+            'model_info': {
+                'name': 'MobileNet',
+                'version': '1.0',
+                'size_mb': results.get('model_size_mb', 17)
+            }
+        }
+        
+        # Log to file
+        with open(f"classification_log_{self.device_id}.jsonl", "a") as f:
+            f.write(json.dumps(log_entry) + "\n")
+        
+        return log_entry
+
+# Usage for IoT deployment
+classifier = IoTClassifier("edge_camera_01")
+result = classifier.classify_and_log("sensor_image.jpg")
+print(f"Classification logged: {result['predictions'][0]['class']}")
+```
+
+### Resource Monitoring
+
+```python
+def benchmark_mobilenet():
+    """Benchmark MobileNet performance on current device"""
+    model = MobileNet()
+    
+    # Create test image
+    test_image = cv2.imread("benchmark_image.jpg")
+    if test_image is None:
+        # Create synthetic test image
+        test_image = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+    
+    # Warm-up runs
+    print("Warming up...")
+    for _ in range(10):
+        model.inference(test_image)
+    
+    # Benchmark
+    print("Running benchmark...")
+    times = []
+    
+    for i in range(100):
+        start = time.time()
+        results = model.inference(test_image)
+        end = time.time()
+        times.append(end - start)
+        
+        if i % 20 == 0:
+            print(f"Progress: {i+1}/100")
+    
+    # Results
+    avg_time = np.mean(times)
+    min_time = np.min(times)
+    max_time = np.max(times)
+    fps = 1.0 / avg_time
+    
+    print(f"\nMobileNet Benchmark Results:")
+    print(f"Average inference time: {avg_time*1000:.2f}ms")
+    print(f"Min inference time: {min_time*1000:.2f}ms")
+    print(f"Max inference time: {max_time*1000:.2f}ms")
+    print(f"Average FPS: {fps:.1f}")
+    print(f"Model suitable for real-time: {'Yes' if fps > 30 else 'No'}")
+
+benchmark_mobilenet()
+```
+
+## Hardware Detection
+
+```
+✨ InferX - MobileNet Model ✨
+🔍 Device Detected: ORIN_NANO
+⠏ [0.2s] Loading MobileNet model
+✓ [0.3s] Ready for fast inference
+📊 Model size: 17MB | Expected FPS: ~125
+```
 
 ## Comparison with Other Models
 
-| Model | Size | Accuracy | Inference Speed |
-| --- | --- | --- | --- |
-| MobileNet | Small (~5MB) | Good | Fast |
-| ResNet34 | Medium (~80MB) | Better | Medium |
-| Vision Transformers | Large (>200MB) | Best | Slow |
+| Model | Size | Speed | Accuracy | Best Use Case |
+|-------|------|-------|----------|---------------|
+| **MobileNet** | 17MB | Very Fast | Good | Mobile, Real-time |
+| ResNet34 | 80MB | Medium | Better | High accuracy needed |
+| CLIP | 150MB | Slow | Best (multimodal) | Understanding + classification |
 
-For applications requiring higher accuracy and where computational resources are less constrained, consider using [ResNet34](/models/resnet34) instead.
+## Next Steps
 
-For more information on optimizing model performance, see the [Custom Models Optimization](/models/custom-models/optimization) guide. 
+- Try [ResNet34](/models/resnet34) for higher accuracy when speed isn't critical
+- Explore [CLIP model](/models/clip) for multimodal understanding
+- Check out [practical mobile examples](https://github.com/exla-ai/InferX-examples/tree/main/mobilenet)
+- Learn about [optimizing for specific hardware](/models/custom-models/overview) 
